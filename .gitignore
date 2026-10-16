@@ -1,0 +1,15 @@
+# Secrets & machine-specific
+local.properties
+
+# Gradle / build
+.gradle/
+.kotlin/
+build/
+captures/
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.DS_Store

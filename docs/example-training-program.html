@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Day One Strength Session</title>
+<style>
+  :root{
+    --ink:#101820;
+    --rule:#c9cdd2;
+    --hivis:#D6E600;
+    --paper:#ffffff;
+    --muted:#5b646d;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#e8eaec;}
+  body{
+    font-family:Georgia,"Times New Roman",serif;
+    color:var(--ink);
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  .sheet{
+    width:8.5in;
+    min-height:11in;
+    margin:24px auto;
+    padding:0.5in 0.55in;
+    background:var(--paper);
+    box-shadow:0 2px 18px rgba(0,0,0,.18);
+  }
+  .cond{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,Helvetica,sans-serif;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+
+  /* header */
+  header{border-bottom:3px solid var(--ink);padding-bottom:8px;}
+  .kicker{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.22em;font-size:9.5px;
+    color:var(--muted);
+  }
+  h1{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,Helvetica,sans-serif;
+    text-transform:uppercase;letter-spacing:.01em;
+    font-size:44px;line-height:.95;font-weight:700;margin:5px 0 6px;
+  }
+  h1 em{font-style:normal;background:var(--hivis);padding:0 6px;}
+  .meta{
+    display:flex;gap:26px;font-size:10px;color:var(--muted);
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.1em;
+  }
+  .meta span b{color:var(--ink);font-weight:700;}
+
+  /* bookend strips */
+  .strip{
+    display:grid;grid-template-columns:78px 1fr;gap:14px;
+    padding:9px 0;border-bottom:1px solid var(--rule);
+    font-size:11.5px;
+  }
+  .strip .lbl{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.1em;font-size:10px;
+    color:var(--muted);padding-top:1px;
+  }
+  .strip ul{margin:0;padding:0;list-style:none;
+    display:flex;flex-wrap:wrap;gap:3px 18px;}
+  .strip li::before{content:"·";color:var(--hivis);
+    font-weight:700;margin-right:5px;
+    -webkit-text-stroke:.4px #9aa300;}
+
+  /* main table */
+  .mainhead{
+    display:flex;align-items:baseline;justify-content:space-between;
+    margin:16px 0 0;
+  }
+  .mainhead h2{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.14em;
+    font-size:13px;margin:0;font-weight:700;
+  }
+  .mainhead .note{font-size:10px;color:var(--muted);font-style:italic;}
+
+  .row{
+    display:grid;
+    grid-template-columns:26px 1fr 96px 118px;
+    gap:12px;align-items:start;
+    padding:11px 0 10px;
+    border-bottom:1px solid var(--rule);
+  }
+  .row:first-of-type{border-top:2px solid var(--ink);}
+  .num{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    font-size:22px;font-weight:700;line-height:1;color:var(--ink);
+    padding-top:2px;
+  }
+  .name{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.03em;
+    font-size:16px;font-weight:700;line-height:1.05;margin:0 0 3px;
+  }
+  .cue{font-size:11px;line-height:1.4;margin:0;color:#2b333b;}
+  .cue b{background:var(--hivis);padding:0 3px;font-weight:700;}
+  .presc{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.05em;
+    font-size:12px;line-height:1.3;padding-top:3px;
+  }
+  .presc small{display:block;font-size:9.5px;color:var(--muted);
+    letter-spacing:.09em;margin-top:2px;}
+  .log{padding-top:4px;}
+  .boxes{display:flex;gap:5px;margin-bottom:6px;}
+  .boxes i{
+    width:15px;height:15px;border:1.4px solid var(--ink);display:block;
+  }
+  .weight{
+    border-bottom:1px solid var(--ink);height:15px;
+  }
+  .weight span{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    font-size:8.5px;letter-spacing:.12em;color:var(--muted);
+    text-transform:uppercase;
+  }
+  .loghead{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);text-align:left;
+  }
+  .colhead{
+    display:grid;grid-template-columns:26px 1fr 96px 118px;gap:12px;
+    padding-bottom:4px;
+  }
+
+  /* footer rule */
+  .rule{
+    margin-top:16px;border:2px solid var(--ink);padding:11px 13px;
+    display:grid;grid-template-columns:1fr 210px;gap:18px;align-items:center;
+  }
+  .rule .big{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.02em;
+    font-size:17px;font-weight:700;line-height:1.1;margin:0;
+  }
+  .rule .big em{font-style:normal;background:var(--hivis);padding:0 4px;}
+  .rule p{margin:4px 0 0;font-size:10.5px;color:var(--muted);line-height:1.45;}
+  .rule aside{
+    font-size:10.5px;line-height:1.45;border-left:1px solid var(--rule);
+    padding-left:14px;
+  }
+  .rule aside strong{
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.1em;font-size:9px;
+    display:block;color:var(--muted);margin-bottom:3px;
+  }
+  footer{
+    margin-top:10px;display:flex;justify-content:space-between;
+    font-family:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+    text-transform:uppercase;letter-spacing:.12em;font-size:8.5px;
+    color:var(--muted);
+  }
+
+  @page{size:letter;margin:0;}
+  @media print{
+    html,body{background:#fff;}
+    .sheet{margin:0;box-shadow:none;width:auto;min-height:0;padding:0.45in 0.5in;}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <div class="kicker">Cycling &amp; Cross-Training Program 2026 · Winter Phase · Monday</div>
+    <h1>Strength <em>Day One</em></h1>
+    <div class="meta">
+      <span><b>~40 min</b></span>
+      <span>Rest <b>90 sec</b> between sets</span>
+      <span>Date <b>___ / ___</b></span>
+      <span>Fatigue before <b>___ /10</b></span>
+    </div>
+  </header>
+
+  <div class="strip">
+    <div class="lbl">Warm-up<br>8 min</div>
+    <ul>
+      <li>Leg swings, front-back &amp; side-side · 10 each leg</li>
+      <li>Bodyweight glute bridges · 15</li>
+      <li>Walking lunges · 8 each leg</li>
+      <li>Cat-cow + hip circles · 1 min</li>
+    </ul>
+  </div>
+
+  <div class="mainhead">
+    <h2>Main Work · 25 min</h2>
+    <div class="note">Order matters. Hardest movements while you are freshest.</div>
+  </div>
+
+  <div class="colhead">
+    <div></div><div></div><div></div>
+    <div class="loghead">Tick each set · log load</div>
+  </div>
+
+  <div class="row">
+    <div class="num">1</div>
+    <div>
+      <p class="name">Goblet Squat</p>
+      <p class="cue">Hold one dumbbell or kettlebell upright against your chest, like a goblet. Squat down between your knees, stand up. <b>The weight up front stops you tipping forward.</b></p>
+    </div>
+    <div class="presc">2 × 10<small>20–25 lb</small></div>
+    <div class="log">
+      <div class="boxes"><i></i><i></i></div>
+      <div class="weight"></div><span>lb used</span>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="num">2</div>
+    <div>
+      <p class="name">Bulgarian Split Squat</p>
+      <p class="cue">Back foot up on a bench or chair, front foot a stride ahead. Lower straight down, not forward. Fingertips on a wall for balance. <b>Bodyweight only, for months.</b></p>
+    </div>
+    <div class="presc">2 × 6<small>each leg · no load</small></div>
+    <div class="log">
+      <div class="boxes"><i></i><i></i></div>
+      <div class="weight"></div><span>notes</span>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="num">3</div>
+    <div>
+      <p class="name">Romanian Deadlift</p>
+      <p class="cue">Dumbbells in hand, soft knees. Push your hips back toward the wall behind you, flat back, weights sliding down your thighs. Stand by squeezing your glutes. <b>Hinge, not squat.</b></p>
+    </div>
+    <div class="presc">2 × 8<small>light</small></div>
+    <div class="log">
+      <div class="boxes"><i></i><i></i></div>
+      <div class="weight"></div><span>lb used</span>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="num">4</div>
+    <div>
+      <p class="name">Dumbbell Row</p>
+      <p class="cue">One hand and one knee on a bench, other arm hanging with the dumbbell. Pull your elbow up toward your hip, like starting a lawnmower. <b>For the hunched-over-the-bars posture.</b></p>
+    </div>
+    <div class="presc">2 × 10<small>each side</small></div>
+    <div class="log">
+      <div class="boxes"><i></i><i></i></div>
+      <div class="weight"></div><span>lb used</span>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="num">5</div>
+    <div>
+      <p class="name">Dead Bug</p>
+      <p class="cue">On your back, arms up, knees bent at 90 degrees. Slowly extend the opposite arm and leg toward the floor. <b>Lower back stays pressed flat the whole time.</b></p>
+    </div>
+    <div class="presc">2 × 8<small>each side</small></div>
+    <div class="log">
+      <div class="boxes"><i></i><i></i></div>
+      <div class="weight"></div><span>notes</span>
+    </div>
+  </div>
+
+  <div class="strip" style="border-top:1px solid var(--rule);">
+    <div class="lbl">Cool-down<br>5 min</div>
+    <ul>
+      <li>Low lunge or couch stretch · 60 sec each side</li>
+      <li>Figure 4 stretch · 60 sec each side</li>
+    </ul>
+  </div>
+
+  <div class="rule">
+    <div>
+      <p class="big">Finish every set feeling like you could do <em>four or five more reps.</em></p>
+      <p>Progressive loading starts week three, once tendons and connective tissue catch up to enthusiasm. Delayed onset muscle soreness peaks Wednesday, which is a swim day.</p>
+    </div>
+    <aside>
+      <strong>Do this once today</strong>
+      Film one set of the Romanian deadlift and one of the split squat on your phone. Your sense of what your spine is doing is almost always wrong, and the camera settles it in five seconds.
+    </aside>
+  </div>
+
+  <footer>
+    <span>Monday · Full body · Glutes, hip stability, posterior chain</span>
+    <span>Next session Friday · Upper body + core</span>
+  </footer>
+
+</div>
+</body>
+</html>
