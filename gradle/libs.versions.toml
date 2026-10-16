@@ -1,5 +1,5 @@
 [versions]
-agp = "9.4.1"
+agp = "9.2.1" # newest AGP supported by our Android Studio (2026.1); bump together with Studio
 kotlin = "2.4.21"
 ksp = "2.3.12"
 coreKtx = "1.19.1"
