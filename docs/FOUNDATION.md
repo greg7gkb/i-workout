@@ -35,7 +35,15 @@ One item in a Routine, in a fixed position.
 
 An Exercise belongs to exactly one Routine. There's no shared exercise catalog: if the same movement appears in two Routines, it appears there twice. "Last time" matches on the exact name, so Claude keeps names consistent.
 
-**Warm-up and cool-down are each a single Exercise.** Their sub-items go in `instructions`, e.g. "Leg swings 10/leg · glute bridges 15 · walking lunges 8/leg · cat-cow + hip circles 1 min". They're logged as one "done" tick.
+**Warm-up and cool-down are each a single Exercise.** Their sub-items go in `instructions`, and they're logged as one "done" tick. Format: a duration line, then one bulleted item per line (Airtable long text keeps newlines, and the app shows them as written):
+
+```
+8 min
+• Leg swings, front-back & side-side: 10/leg
+• Glute bridges: 15
+• Walking lunges: 8/leg
+• Cat-cow + hip circles: 1 min
+```
 
 ### Session
 One workout you actually did, on a date. Example: "Mon Oct 13, Strength Day One".
