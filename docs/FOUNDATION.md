@@ -229,6 +229,12 @@ All must pass before committing (see `CLAUDE.md`):
 
 - **Platform:** Android, minSdk 29, sideloaded onto your own phone. Weights in pounds.
 - **Stack:** Kotlin, Jetpack Compose with Material 3, Room, WorkManager, Retrofit with OkHttp and kotlinx.serialization. One `app` module.
+- **Look and feel ("Volt")**, all in `ui/Theme.kt` and `ui/Components.kt`:
+  - Palette: charcoal with electric lime, as fixed light and dark schemes (no wallpaper-based dynamic color). In light mode, olive is used for text and lime for filled buttons.
+  - Cards: a colored stripe per Exercise type (warm-up amber, equipment lime/olive, bodyweight teal, cool-down blue); other cards use the primary color.
+  - Type: Oswald (SIL OFL; license in `licenses/`) for headings and exercise names, the system font for body text, all scaled up for arm's-length reading.
+  - Icons: Material Symbols as individual vector drawables, with no icon library.
+  - Feedback: a light vibration on Log set; finished exercises dim and show a ✓.
 - **Airtable API:** at most 10 records per write and about 5 requests per second, both far above what this app uses.
 - **Secrets:** the Airtable token lives in `local.properties` (gitignored) and is compiled into `BuildConfig`. It's scoped to one base, with record read/write access only.
 

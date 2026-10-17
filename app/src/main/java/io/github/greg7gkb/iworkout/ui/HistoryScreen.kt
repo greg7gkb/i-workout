@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -55,7 +54,7 @@ fun HistoryScreen(container: AppContainer, onOpenSession: (String) -> Unit, onBa
         ) {
             items(list, key = { it.session.uuid }) { row ->
                 val s = row.session
-                Card(onClick = { onOpenSession(s.uuid) }, modifier = Modifier.fillMaxWidth()) {
+                StripeCard(MaterialTheme.colorScheme.primary, onClick = { onOpenSession(s.uuid) }) {
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(names[s.routineId] ?: "Workout", style = MaterialTheme.typography.titleLarge)
                         Text(formatDateTime(s.startedAt), style = MaterialTheme.typography.bodyLarge)

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -53,7 +52,7 @@ fun ExerciseHistoryScreen(container: AppContainer, exerciseName: String, onBack:
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(bySession, key = { it.first().set.sessionUuid }) { sets ->
-                Card(Modifier.fillMaxWidth()) {
+                StripeCard(MaterialTheme.colorScheme.primary) {
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(formatDateTime(sets.first().startedAt), style = MaterialTheme.typography.titleMedium)
                         Text(sets.joinToString(", ") { describe(it.set) }, style = MaterialTheme.typography.bodyLarge)

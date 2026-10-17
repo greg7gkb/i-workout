@@ -64,7 +64,7 @@ fun SyncHistoryScreen(container: AppContainer, onBack: () -> Unit) {
 
 @Composable
 private fun AttemptCard(attempt: SyncAttempt) {
-    Card(Modifier.fillMaxWidth()) {
+    StripeCard(if (attempt.ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 (if (attempt.ok) "✓ " else "✗ ") + formatDateTime(attempt.at),

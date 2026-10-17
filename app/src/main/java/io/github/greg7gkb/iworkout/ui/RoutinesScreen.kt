@@ -1,5 +1,6 @@
 package io.github.greg7gkb.iworkout.ui
 
+import io.github.greg7gkb.iworkout.R
 import android.text.format.DateUtils
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +20,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -59,16 +59,17 @@ fun RoutinesScreen(
             TopAppBar(
                 title = { Text("Routines") },
                 actions = {
-                    TextButton(onClick = onHistory) { Text("History") }
+                    BarIcon(R.drawable.ic_history, "History", onHistory)
                     // Shows the current theme; tap to switch.
-                    TextButton(onClick = onToggleTheme) { Text(if (dark) "☾" else "☀") }
+                    if (dark) BarIcon(R.drawable.ic_dark_mode, "Dark theme; switch to light", onToggleTheme)
+                    else BarIcon(R.drawable.ic_light_mode, "Light theme; switch to dark", onToggleTheme)
                     // A spinner replaces Sync while a sync runs, which also blocks repeat taps.
                     if (activity == SyncActivity.RUNNING) {
-                        Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
                         }
                     } else {
-                        TextButton(onClick = { SyncWorker.syncNow(context) }) { Text("Sync") }
+                        BarIcon(R.drawable.ic_sync, "Sync now") { SyncWorker.syncNow(context) }
                     }
                 },
             )
@@ -124,7 +125,7 @@ private fun SyncLine(sync: SyncState, pending: Int, activity: SyncActivity, onCl
 
 @Composable
 private fun RoutineCard(routine: RoutineEntity, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    StripeCard(MaterialTheme.colorScheme.primary, onClick = onClick) {
         Column(Modifier.padding(24.dp)) {
             Text(routine.name, style = MaterialTheme.typography.titleLarge)
             if (routine.notes.isNotBlank()) {

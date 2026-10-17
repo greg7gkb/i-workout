@@ -1,5 +1,12 @@
 package io.github.greg7gkb.iworkout.ui
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
+import io.github.greg7gkb.iworkout.R
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.TextRange
@@ -28,8 +35,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -121,7 +126,7 @@ fun SessionScreen(
             items(loadedExercises, key = { it.id }) { exercise ->
                 val logged = setsByPosition[exercise.position].orEmpty()
                 if (exercise.isBookend) {
-                    BookendCard(exercise, done = logged.isNotEmpty()) { done ->
+                    BookendCard(exercise, done = logged.isNotEmpty(), live = !finished) { done ->
                         scope.launch { log.setDone(sessionUuid, exercise, done) }
                     }
                 } else {
@@ -131,6 +136,7 @@ fun SessionScreen(
                         exercise = exercise,
                         logged = logged,
                         lastTime = lastTime,
+                        live = !finished,
                         onLog = { reps, weight ->
                             scope.launch { log.logSet(sessionUuid, exercise, reps, weight) }
                         },
@@ -195,19 +201,16 @@ fun SessionScreen(
 
 private val ExerciseEntity.isBookend get() = type == ExerciseType.WARM_UP || type == ExerciseType.COOL_DOWN
 
+// `live` is a workout in progress (not a past one being edited); done items dim so the next one stands out.
 @Composable
-private fun BookendCard(exercise: ExerciseEntity, done: Boolean, onDone: (Boolean) -> Unit) {
-    Card(
-        onClick = { onDone(!done) },
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-    ) {
+private fun BookendCard(exercise: ExerciseEntity, done: Boolean, live: Boolean, onDone: (Boolean) -> Unit) {
+    ExerciseCard(exercise.type, dimmed = done && live, onClick = { onDone(!done) }) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
             Checkbox(checked = done, onCheckedChange = onDone)
             Column(Modifier.padding(top = 12.dp)) {
                 Text(exercise.name, style = MaterialTheme.typography.titleLarge)
                 if (exercise.instructions.isNotBlank()) {
-                    Text(exercise.instructions, style = MaterialTheme.typography.bodyLarge)
+                    Text(exercise.instructions, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -219,6 +222,7 @@ private fun ExerciseLogCard(
     exercise: ExerciseEntity,
     logged: List<SetEntity>,
     lastTime: List<SetEntity>,
+    live: Boolean,
     onLog: (reps: Int?, weight: Double?) -> Unit,
     onRemove: (SetEntity) -> Unit,
     onEdit: (SetEntity) -> Unit,
@@ -234,7 +238,9 @@ private fun ExerciseLogCard(
     var reps by remember(exercise.id, logged.size, prefillReps) { mutableStateOf(prefillReps?.toString().orEmpty()) }
     var weight by remember(exercise.id, logged.size, prefillWeight) { mutableStateOf(prefillWeight?.let(::formatWeight).orEmpty()) }
 
-    Card(Modifier.fillMaxWidth()) {
+    val haptics = LocalHapticFeedback.current
+
+    ExerciseCard(exercise.type, dimmed = complete && live) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -242,13 +248,13 @@ private fun ExerciseLogCard(
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = onOpenHistory) { Text("History") }
+                IconButton(onClick = onOpenHistory) {
+                    Icon(painterResource(R.drawable.ic_history), contentDescription = "${exercise.name} history")
+                }
                 if (targetSets > 0) {
-                    Text(
-                        "${logged.size}/$targetSets",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = if (complete) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    val color = if (complete) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    if (complete) Icon(painterResource(R.drawable.ic_check), contentDescription = "Complete", tint = color)
+                    Text("${logged.size}/$targetSets", style = MaterialTheme.typography.titleLarge, color = color)
                 }
             }
             targetLine(exercise)?.let { Text("Target: $it", style = MaterialTheme.typography.bodyLarge) }
@@ -290,11 +296,17 @@ private fun ExerciseLogCard(
                         modifier = Modifier.weight(1f),
                     )
                 }
-                val log = { onLog(reps.toIntOrNull(), if (usesWeight) weight.toDoubleOrNull() else null) }
+                val log = {
+                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                    onLog(reps.toIntOrNull(), if (usesWeight) weight.toDoubleOrNull() else null)
+                }
                 if (complete) {
-                    FilledTonalButton(onClick = log) { Text("+ Set", maxLines = 1, softWrap = false) }
+                    FilledTonalButton(onClick = log) {
+                        Icon(painterResource(R.drawable.ic_add), contentDescription = null, modifier = Modifier.size(20.dp))
+                        Text("Set", maxLines = 1, softWrap = false)
+                    }
                 } else {
-                    Button(onClick = log) { Text("Log set", maxLines = 1, softWrap = false) }
+                    Button(onClick = log, colors = limeButtonColors()) { Text("Log set", maxLines = 1, softWrap = false) }
                 }
             }
         }
