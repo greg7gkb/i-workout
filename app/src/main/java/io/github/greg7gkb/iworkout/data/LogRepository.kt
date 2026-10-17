@@ -29,6 +29,8 @@ class LogRepository(
     fun setsFor(sessionUuid: String) = dao.setsFor(sessionUuid)
     fun lastTime(exerciseName: String, currentSession: String) = dao.lastTime(exerciseName, currentSession)
     fun pendingCount() = dao.pendingCount()
+    fun finishedSessions() = dao.finishedSessions()
+    fun exerciseHistory(name: String) = dao.exerciseHistory(name)
 
     suspend fun start(routineId: String): String {
         val uuid = UUID.randomUUID().toString()
@@ -43,6 +45,8 @@ class LogRepository(
         dao.appendSet(sessionUuid, exercise, reps, weight)
 
     suspend fun removeSet(set: SetEntity) = dao.removeSet(set)
+    suspend fun editSet(set: SetEntity, reps: Int?, weight: Double?) = dao.editSet(set, reps, weight)
+    suspend fun moveStart(session: SessionEntity, newStartedAt: Long) = dao.shift(session.uuid, newStartedAt - session.startedAt)
     suspend fun setDone(sessionUuid: String, exercise: ExerciseEntity, done: Boolean) = dao.setDone(sessionUuid, exercise, done)
     suspend fun setNotes(uuid: String, notes: String) = dao.setNotes(uuid, notes)
     suspend fun finish(uuid: String) = dao.finish(uuid, System.currentTimeMillis())

@@ -32,6 +32,7 @@ interface AirtableApi {
 data class Record(
     val id: String,
     val fields: JsonObject,
+    val createdTime: String? = null, // ISO-8601
 )
 
 @Serializable

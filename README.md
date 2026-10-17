@@ -18,6 +18,9 @@ A small, offline-first Android app for logging strength workouts. Routines are w
    ```
 4. `./gradlew installDebug` with your phone connected.
 
+**Release build** (R8-shrunk, about 3 MB instead of about 34 MB, signed with the debug key for sideloading):
+`./gradlew assembleRelease`, then install `app/build/outputs/apk/release/app-release.apk`.
+
 ## Stack
 
 Kotlin · Jetpack Compose · Room · WorkManager · Retrofit + kotlinx.serialization. Single `app` module, no DI framework.

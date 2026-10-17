@@ -1,6 +1,7 @@
 package io.github.greg7gkb.iworkout.data.local
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -16,6 +17,8 @@ data class RoutineEntity(
     val name: String,
     val notes: String,
     val active: Boolean,
+    // When Claude created it in Airtable (epoch millis); newest Routines are listed first.
+    @ColumnInfo(defaultValue = "0") val createdAt: Long = 0,
 )
 
 @Entity(
@@ -60,6 +63,18 @@ data class SessionEntity(
     val dirty: Boolean = true,
     // Bumped on every change; a push only clears `dirty` if no change happened while it was in flight.
     @ColumnInfo(defaultValue = "0") val revision: Int = 0,
+)
+
+// History list row: a finished Session plus how many Sets it has.
+data class SessionSummary(
+    @Embedded val session: SessionEntity,
+    val setCount: Int,
+)
+
+// Per-exercise history row: a Set plus when its Session started.
+data class SetWithDate(
+    @Embedded val set: SetEntity,
+    val startedAt: Long,
 )
 
 @Entity(

@@ -147,7 +147,7 @@ Trade-off we accepted: in the Airtable UI, the log is one text cell, so it's har
 
 ## 7. Functional requirements (v1)
 
-1. **Pick a Routine** from the active ones.
+1. **Pick a Routine** from the active ones, newest first (by when Claude created it in Airtable).
 2. **Log a Session:**
    - walk through the Exercises in order
    - see the targets, the instructions and "last time"
@@ -156,7 +156,11 @@ Trade-off we accepted: in the Airtable UI, the log is one text cell, so it's har
    - tick warm-up and cool-down as done
    - start the rest timer after each Set
 3. **History:** past Sessions and their Sets, plus per-Exercise history (matched by name).
-4. **Edit and delete** your own logs.
+4. **Edit and delete** your own logs:
+   - fix a Set's numbers, add or remove Sets
+   - delete a workout (soft delete)
+   - change a workout's date. Start and end move together, which also covers backfilling past workouts.
+   - "Last time" always means the latest workout *before* the one you're viewing.
 5. **Sync:** automatic when online, plus a manual "sync now". Shows the last sync time and the number of unsent items.
 
 **Not in v1:** editing Routines on the phone, charts, cardio, wearables, notifications, multiple users, iOS.

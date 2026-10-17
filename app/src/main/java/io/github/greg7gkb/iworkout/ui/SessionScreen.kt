@@ -1,6 +1,22 @@
 package io.github.greg7gkb.iworkout.ui
 
 import android.content.Context
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import androidx.compose.foundation.layout.Arrangement
@@ -59,7 +75,12 @@ private const val REST_SECONDS = 90
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> Unit) {
+fun SessionScreen(
+    container: AppContainer,
+    sessionUuid: String,
+    onClose: () -> Unit,
+    onOpenExercise: (String) -> Unit,
+) {
     val scope = rememberCoroutineScope()
     val log = container.log
     val context = LocalContext.current
@@ -74,16 +95,28 @@ fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> U
     // Rest timer as an absolute end time, so it stays right across recomposition and backgrounding.
     var restEndsAt by rememberSaveable { mutableLongStateOf(0L) }
     var confirmDiscard by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<SetEntity?>(null) }
+    var pickingDate by remember { mutableStateOf(false) }
+    // A finished Session opened from History is in edit mode: no Finish, no rest timer.
+    val finished = session?.endedAt != null
+    // Edits to a finished Session make it dirty again; leaving kicks off the re-upload.
+    val close = {
+        if (finished) SyncWorker.syncNow(context)
+        onClose()
+    }
 
     KeepScreenOn()
+    BackHandler(onBack = close)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(routine?.name ?: "Workout") },
-                navigationIcon = { TextButton(onClick = onClose) { Text("Back") } },
+                navigationIcon = { TextButton(onClick = close) { Text("Back") } },
                 actions = {
-                    TextButton(onClick = { scope.launch { log.finish(sessionUuid); SyncWorker.syncNow(context); onClose() } }) { Text("Finish") }
+                    if (session != null && !finished) {
+                        TextButton(onClick = { scope.launch { log.finish(sessionUuid); SyncWorker.syncNow(context); onClose() } }) { Text("Finish") }
+                    }
                 },
             )
         },
@@ -102,6 +135,9 @@ fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> U
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            session?.takeIf { finished }?.let { s ->
+                item(key = "date") { DateRow(s.startedAt, s.endedAt, onChange = { pickingDate = true }) }
+            }
             items(loadedExercises, key = { it.id }) { exercise ->
                 val logged = setsByPosition[exercise.position].orEmpty()
                 if (exercise.isBookend) {
@@ -117,9 +153,11 @@ fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> U
                         lastTime = lastTime,
                         onLog = { reps, weight ->
                             scope.launch { log.logSet(sessionUuid, exercise, reps, weight) }
-                            restEndsAt = System.currentTimeMillis() + REST_SECONDS * 1000L
+                            if (!finished) restEndsAt = System.currentTimeMillis() + REST_SECONDS * 1000L
                         },
                         onRemove = { set -> scope.launch { log.removeSet(set) } },
+                        onEdit = { set -> editing = set },
+                        onOpenHistory = { onOpenExercise(exercise.name) },
                     )
                 }
             }
@@ -130,7 +168,7 @@ fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> U
             }
             item {
                 TextButton(onClick = { confirmDiscard = true }) {
-                    Text("Discard workout", color = MaterialTheme.colorScheme.error)
+                    Text(if (finished) "Delete workout" else "Discard workout", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -139,12 +177,39 @@ fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> U
     if (confirmDiscard) {
         AlertDialog(
             onDismissRequest = { confirmDiscard = false },
-            title = { Text("Discard this workout?") },
+            title = { Text(if (finished) "Delete this workout?" else "Discard this workout?") },
             text = { Text("Logged sets will be removed from history.") },
             confirmButton = {
-                TextButton(onClick = { scope.launch { log.discard(sessionUuid); SyncWorker.syncNow(context); onClose() } }) { Text("Discard") }
+                TextButton(onClick = { scope.launch { log.discard(sessionUuid); SyncWorker.syncNow(context); onClose() } }) {
+                    Text(if (finished) "Delete" else "Discard")
+                }
             },
             dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text("Cancel") } },
+        )
+    }
+
+    editing?.let { set ->
+        val type = exercises?.firstOrNull { it.position == set.exercisePosition }?.type
+        EditSetDialog(
+            set = set,
+            usesWeight = type == ExerciseType.EQUIPMENT || set.weight != null,
+            onDismiss = { editing = null },
+            onSave = { reps, weight ->
+                scope.launch { log.editSet(set, reps, weight) }
+                editing = null
+            },
+        )
+    }
+
+    val current = session
+    if (pickingDate && current != null) {
+        StartTimePicker(
+            initial = current.startedAt,
+            onDismiss = { pickingDate = false },
+            onPick = { newStart ->
+                scope.launch { log.moveStart(current, newStart) }
+                pickingDate = false
+            },
         )
     }
 }
@@ -177,6 +242,8 @@ private fun ExerciseLogCard(
     lastTime: List<SetEntity>,
     onLog: (reps: Int?, weight: Double?) -> Unit,
     onRemove: (SetEntity) -> Unit,
+    onEdit: (SetEntity) -> Unit,
+    onOpenHistory: () -> Unit,
 ) {
     val usesWeight = exercise.type == ExerciseType.EQUIPMENT
     val targetSets = exercise.sets ?: 0
@@ -200,6 +267,7 @@ private fun ExerciseLogCard(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
+                TextButton(onClick = onOpenHistory) { Text("History") }
                 if (targetSets > 0) {
                     Text(
                         "${logged.size}/$targetSets",
@@ -219,7 +287,8 @@ private fun ExerciseLogCard(
             }
 
             logged.forEach { set ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Tap a logged set to fix its numbers.
+                Row(Modifier.clickable { onEdit(set) }, verticalAlignment = Alignment.CenterVertically) {
                     Text("Set ${set.setNumber}", modifier = Modifier.width(56.dp), style = MaterialTheme.typography.bodyLarge)
                     Text(describe(set), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                     TextButton(onClick = { onRemove(set) }) { Text("Remove") }
@@ -315,15 +384,108 @@ private fun buzz(context: Context) {
     vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 250, 150, 250), -1))
 }
 
-private fun describe(set: SetEntity): String = when {
+internal fun describe(set: SetEntity): String = when {
     set.reps != null && set.weight != null -> "${set.reps} @ ${formatWeight(set.weight)}"
     set.reps != null -> "${set.reps}"
     set.weight != null -> "@ ${formatWeight(set.weight)}"
     else -> "✓"
 }
 
-private fun formatWeight(w: Double): String = if (w % 1.0 == 0.0) w.toLong().toString() else w.toString()
+internal fun formatWeight(w: Double): String = if (w % 1.0 == 0.0) w.toLong().toString() else w.toString()
 
 private fun leadingInt(s: String?): Int? = s?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
 
 private fun leadingNumber(s: String?): Double? = s?.let { Regex("""\d+(\.\d+)?""").find(it)?.value?.toDoubleOrNull() }
+
+@Composable
+private fun DateRow(startedAt: Long, endedAt: Long?, onChange: () -> Unit) {
+    val minutes = endedAt?.let { (it - startedAt) / 60_000 }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            formatDateTime(startedAt) + (minutes?.let { " · $it min" } ?: ""),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onChange) { Text("Change date") }
+    }
+}
+
+@Composable
+private fun EditSetDialog(set: SetEntity, usesWeight: Boolean, onDismiss: () -> Unit, onSave: (Int?, Double?) -> Unit) {
+    // Reps starts focused and fully selected, so typing replaces the old value.
+    var reps by remember(set.id) {
+        val text = set.reps?.toString().orEmpty()
+        mutableStateOf(TextFieldValue(text, TextRange(0, text.length)))
+    }
+    var weight by remember(set.id) { mutableStateOf(set.weight?.let(::formatWeight).orEmpty()) }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("${set.exerciseName} · set ${set.setNumber}") },
+        text = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = reps,
+                    onValueChange = { v -> reps = v.copy(text = v.text.filter(Char::isDigit).take(3)) },
+                    label = { Text("Reps") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.width(96.dp).focusRequester(focus),
+                )
+                if (usesWeight) {
+                    OutlinedTextField(
+                        value = weight,
+                        onValueChange = { v -> weight = v.filter { it.isDigit() || it == '.' }.take(5) },
+                        label = { Text("lb") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.width(96.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(reps.text.toIntOrNull(), if (usesWeight) weight.toDoubleOrNull() else null) }) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+// Date, then time of day. Returns the new start as epoch millis in the phone's time zone.
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StartTimePicker(initial: Long, onDismiss: () -> Unit, onPick: (Long) -> Unit) {
+    val zone = ZoneId.systemDefault()
+    val start = Instant.ofEpochMilli(initial).atZone(zone)
+    // DatePicker works in UTC midnights.
+    val dateState = rememberDatePickerState(
+        initialSelectedDateMillis = start.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+    )
+    val timeState = rememberTimePickerState(initialHour = start.hour, initialMinute = start.minute)
+    var pickingTime by remember { mutableStateOf(false) }
+
+    if (!pickingTime) {
+        DatePickerDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = { TextButton(onClick = { pickingTime = true }) { Text("Next") } },
+            dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        ) { DatePicker(state = dateState) }
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("Start time") },
+            text = { TimePicker(state = timeState) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val date = Instant.ofEpochMilli(dateState.selectedDateMillis ?: initial).atZone(ZoneOffset.UTC).toLocalDate()
+                    onPick(date.atTime(LocalTime.of(timeState.hour, timeState.minute)).atZone(zone).toInstant().toEpochMilli())
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        )
+    }
+}
+
+internal fun formatDateTime(millis: Long): String =
+    DateTimeFormatter.ofPattern("EEE, MMM d · h:mm a").format(Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()))

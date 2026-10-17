@@ -9,8 +9,12 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 abstract class PlanDao {
-    @Query("SELECT * FROM routines WHERE active = 1 ORDER BY name")
+    @Query("SELECT * FROM routines WHERE active = 1 ORDER BY createdAt DESC, name")
     abstract fun activeRoutines(): Flow<List<RoutineEntity>>
+
+    // Includes inactive Routines, so History can still name old workouts.
+    @Query("SELECT * FROM routines")
+    abstract fun allRoutines(): Flow<List<RoutineEntity>>
 
     @Query("SELECT * FROM routines WHERE id = :id")
     abstract fun routine(id: String): Flow<RoutineEntity?>
@@ -55,12 +59,31 @@ abstract class LogDao {
     @Query("SELECT * FROM sets WHERE sessionUuid = :sessionUuid ORDER BY exercisePosition, setNumber")
     abstract fun setsFor(sessionUuid: String): Flow<List<SetEntity>>
 
-    // "Last time": all sets for this exercise from the most recent other non-deleted session that has any.
+    @Query(
+        """
+        SELECT sessions.*, (SELECT COUNT(*) FROM sets WHERE sets.sessionUuid = sessions.uuid) AS setCount
+        FROM sessions WHERE deleted = 0 AND endedAt IS NOT NULL ORDER BY startedAt DESC
+        """,
+    )
+    abstract fun finishedSessions(): Flow<List<SessionSummary>>
+
+    @Query(
+        """
+        SELECT sets.*, sessions.startedAt AS startedAt FROM sets JOIN sessions ON sessions.uuid = sets.sessionUuid
+        WHERE sets.exerciseName = :name AND sessions.deleted = 0
+        ORDER BY sessions.startedAt DESC, sets.setNumber
+        """,
+    )
+    abstract fun exerciseHistory(name: String): Flow<List<SetWithDate>>
+
+    // "Last time": all sets for this exercise from the most recent earlier non-deleted session that has any.
+    // "Earlier" is relative to the given session, so backdated workouts compare against their own past.
     @Query(
         """
         SELECT * FROM sets WHERE exerciseName = :name AND sessionUuid = (
             SELECT st.sessionUuid FROM sets st JOIN sessions se ON se.uuid = st.sessionUuid
             WHERE st.exerciseName = :name AND se.deleted = 0 AND se.uuid != :excludeSession
+                AND se.startedAt < (SELECT startedAt FROM sessions WHERE uuid = :excludeSession)
             ORDER BY se.startedAt DESC LIMIT 1
         ) ORDER BY setNumber
         """,
@@ -95,6 +118,24 @@ abstract class LogDao {
 
     @Query("UPDATE sessions SET notes = :notes, dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
     abstract suspend fun setNotes(uuid: String, notes: String)
+
+    // Moves a Session in time, keeping its duration (used to backdate a logged workout).
+    @Query(
+        """
+        UPDATE sessions SET startedAt = startedAt + :deltaMs, endedAt = endedAt + :deltaMs,
+            dirty = 1, revision = revision + 1 WHERE uuid = :uuid
+        """,
+    )
+    abstract suspend fun shift(uuid: String, deltaMs: Long)
+
+    @Query("UPDATE sets SET reps = :reps, weight = :weight WHERE id = :id")
+    protected abstract suspend fun updateSetValues(id: Long, reps: Int?, weight: Double?)
+
+    @Transaction
+    open suspend fun editSet(set: SetEntity, reps: Int?, weight: Double?) {
+        updateSetValues(set.id, reps, weight)
+        markDirty(set.sessionUuid)
+    }
 
     @Query("UPDATE sessions SET dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
     protected abstract suspend fun markDirty(uuid: String)

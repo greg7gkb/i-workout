@@ -35,7 +35,7 @@ import io.github.greg7gkb.iworkout.data.sync.SyncWorker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: (String) -> Unit) {
+fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: (String) -> Unit, onHistory: () -> Unit) {
     val context = LocalContext.current
     val routines by remember { container.plan.activeRoutines() }.collectAsStateWithLifecycle(initialValue = null)
     val active by remember { container.log.activeSession() }.collectAsStateWithLifecycle(initialValue = null)
@@ -46,7 +46,10 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: 
         topBar = {
             TopAppBar(
                 title = { Text("Routines") },
-                actions = { TextButton(onClick = { SyncWorker.syncNow(context) }) { Text("Sync") } },
+                actions = {
+                    TextButton(onClick = onHistory) { Text("History") }
+                    TextButton(onClick = { SyncWorker.syncNow(context) }) { Text("Sync") }
+                },
             )
         },
     ) { padding ->

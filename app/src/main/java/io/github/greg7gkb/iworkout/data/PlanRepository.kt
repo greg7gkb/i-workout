@@ -13,6 +13,7 @@ import io.github.greg7gkb.iworkout.data.remote.bool
 import io.github.greg7gkb.iworkout.data.remote.int
 import io.github.greg7gkb.iworkout.data.remote.links
 import io.github.greg7gkb.iworkout.data.remote.string
+import java.time.Instant
 
 // Routines + Exercises: read from Room, refreshed from Airtable (Airtable wins).
 class PlanRepository(
@@ -20,6 +21,7 @@ class PlanRepository(
     private val api: AirtableApi,
 ) {
     fun activeRoutines() = dao.activeRoutines()
+    fun allRoutines() = dao.allRoutines()
     fun routine(id: String) = dao.routine(id)
     fun exercisesFor(routineId: String) = dao.exercisesFor(routineId)
 
@@ -30,6 +32,7 @@ class PlanRepository(
                 name = r.fields.string(Routines.NAME).orEmpty(),
                 notes = r.fields.string(Routines.NOTES).orEmpty(),
                 active = r.fields.bool(Routines.ACTIVE),
+                createdAt = r.createdTime?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: 0,
             )
         }
         val routineIds = routines.mapTo(HashSet()) { it.id }
