@@ -154,7 +154,6 @@ Trade-off we accepted: in the Airtable UI, the log is one text cell, so it's har
    - log each Set with one tap (pre-filled from last time or the target, editable)
    - add or remove Sets
    - tick warm-up and cool-down as done
-   - start the rest timer after each Set
 3. **History:** past Sessions and their Sets, plus per-Exercise history (matched by name).
 4. **Edit and delete** your own logs:
    - fix a Set's numbers, add or remove Sets

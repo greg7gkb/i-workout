@@ -1,6 +1,5 @@
 package io.github.greg7gkb.iworkout.ui
 
-import android.content.Context
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.TextRange
@@ -17,15 +16,12 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import android.os.VibrationEffect
-import android.os.VibratorManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,7 +37,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -49,11 +44,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,11 +60,8 @@ import io.github.greg7gkb.iworkout.data.local.ExerciseEntity
 import io.github.greg7gkb.iworkout.data.local.ExerciseType
 import io.github.greg7gkb.iworkout.data.local.SetEntity
 import io.github.greg7gkb.iworkout.data.sync.SyncWorker
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-
-private const val REST_SECONDS = 90
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,12 +82,10 @@ fun SessionScreen(
     val sets by remember(sessionUuid) { log.setsFor(sessionUuid) }.collectAsStateWithLifecycle(initialValue = emptyList())
     val setsByPosition = sets.groupBy { it.exercisePosition }
 
-    // Rest timer as an absolute end time, so it stays right across recomposition and backgrounding.
-    var restEndsAt by rememberSaveable { mutableLongStateOf(0L) }
     var confirmDiscard by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<SetEntity?>(null) }
     var pickingDate by remember { mutableStateOf(false) }
-    // A finished Session opened from History is in edit mode: no Finish, no rest timer.
+    // A finished Session opened from History is in edit mode: no Finish button.
     val finished = session?.endedAt != null
     // Edits to a finished Session make it dirty again; leaving kicks off the re-upload.
     val close = {
@@ -118,13 +106,6 @@ fun SessionScreen(
                         TextButton(onClick = { scope.launch { log.finish(sessionUuid); SyncWorker.syncNow(context); onClose() } }) { Text("Finish") }
                     }
                 },
-            )
-        },
-        bottomBar = {
-            RestTimerBar(
-                endsAt = restEndsAt,
-                onAdd = { restEndsAt += 30_000 },
-                onSkip = { restEndsAt = 0L },
             )
         },
     ) { padding ->
@@ -153,7 +134,6 @@ fun SessionScreen(
                         lastTime = lastTime,
                         onLog = { reps, weight ->
                             scope.launch { log.logSet(sessionUuid, exercise, reps, weight) }
-                            if (!finished) restEndsAt = System.currentTimeMillis() + REST_SECONDS * 1000L
                         },
                         onRemove = { set -> scope.launch { log.removeSet(set) } },
                         onEdit = { set -> editing = set },
@@ -336,52 +316,12 @@ private fun NotesField(sessionUuid: String, initial: String, onSave: (String) ->
 }
 
 @Composable
-private fun RestTimerBar(endsAt: Long, onAdd: () -> Unit, onSkip: () -> Unit) {
-    val context = LocalContext.current
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(endsAt) {
-        if (endsAt == 0L) return@LaunchedEffect
-        while (true) {
-            now = System.currentTimeMillis()
-            if (now >= endsAt) {
-                buzz(context)
-                onSkip()
-                break
-            }
-            delay(250)
-        }
-    }
-    val remaining = ((endsAt - now) / 1000).coerceAtLeast(0)
-    if (endsAt == 0L || remaining <= 0) return
-
-    Surface(color = MaterialTheme.colorScheme.primaryContainer, tonalElevation = 3.dp) {
-        Row(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "Rest %d:%02d".format(remaining / 60, remaining % 60),
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(onClick = onAdd) { Text("+30s") }
-            TextButton(onClick = onSkip) { Text("Skip") }
-        }
-    }
-}
-
-@Composable
 private fun KeepScreenOn() {
     val view = LocalView.current
     DisposableEffect(view) {
         view.keepScreenOn = true
         onDispose { view.keepScreenOn = false }
     }
-}
-
-private fun buzz(context: Context) {
-    val vibrator = (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-    vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 250, 150, 250), -1))
 }
 
 internal fun describe(set: SetEntity): String = when {
