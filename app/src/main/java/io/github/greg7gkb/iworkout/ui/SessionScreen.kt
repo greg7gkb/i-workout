@@ -50,6 +50,7 @@ import io.github.greg7gkb.iworkout.AppContainer
 import io.github.greg7gkb.iworkout.data.local.ExerciseEntity
 import io.github.greg7gkb.iworkout.data.local.ExerciseType
 import io.github.greg7gkb.iworkout.data.local.SetEntity
+import io.github.greg7gkb.iworkout.data.sync.SyncWorker
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -61,6 +62,7 @@ private const val REST_SECONDS = 90
 fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
     val log = container.log
+    val context = LocalContext.current
     val session by remember(sessionUuid) { log.session(sessionUuid) }.collectAsStateWithLifecycle(initialValue = null)
     val routineId = session?.routineId
     val routine by remember(routineId) { container.plan.routine(routineId.orEmpty()) }.collectAsStateWithLifecycle(initialValue = null)
@@ -81,7 +83,7 @@ fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> U
                 title = { Text(routine?.name ?: "Workout") },
                 navigationIcon = { TextButton(onClick = onClose) { Text("Back") } },
                 actions = {
-                    TextButton(onClick = { scope.launch { log.finish(sessionUuid); onClose() } }) { Text("Finish") }
+                    TextButton(onClick = { scope.launch { log.finish(sessionUuid); SyncWorker.syncNow(context); onClose() } }) { Text("Finish") }
                 },
             )
         },
@@ -140,7 +142,7 @@ fun SessionScreen(container: AppContainer, sessionUuid: String, onClose: () -> U
             title = { Text("Discard this workout?") },
             text = { Text("Logged sets will be removed from history.") },
             confirmButton = {
-                TextButton(onClick = { scope.launch { log.discard(sessionUuid); onClose() } }) { Text("Discard") }
+                TextButton(onClick = { scope.launch { log.discard(sessionUuid); SyncWorker.syncNow(context); onClose() } }) { Text("Discard") }
             },
             dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text("Cancel") } },
         )

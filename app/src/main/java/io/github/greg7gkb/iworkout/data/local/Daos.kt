@@ -67,26 +67,36 @@ abstract class LogDao {
     )
     abstract fun lastTime(name: String, excludeSession: String): Flow<List<SetEntity>>
 
-    @Query("SELECT * FROM sessions WHERE dirty = 1")
-    abstract suspend fun dirtySessions(): List<SessionEntity>
+    // Ready to push: changed since last push, and finished or discarded (in-progress workouts stay local).
+    @Query("SELECT * FROM sessions WHERE dirty = 1 AND (endedAt IS NOT NULL OR deleted = 1)")
+    abstract suspend fun pushable(): List<SessionEntity>
+
+    @Query("SELECT COUNT(*) FROM sessions WHERE dirty = 1 AND (endedAt IS NOT NULL OR deleted = 1)")
+    abstract fun pendingCount(): Flow<Int>
+
+    @Query("SELECT * FROM sets WHERE sessionUuid = :sessionUuid ORDER BY exercisePosition, setNumber")
+    abstract suspend fun setsSnapshot(sessionUuid: String): List<SetEntity>
+
+    @Query("UPDATE sessions SET dirty = 0 WHERE uuid = :uuid AND revision = :revision")
+    abstract suspend fun markClean(uuid: String, revision: Int)
 
     @Insert
     abstract suspend fun insertSession(session: SessionEntity)
 
-    @Query("UPDATE sessions SET endedAt = :endedAt, dirty = 1 WHERE uuid = :uuid")
+    @Query("UPDATE sessions SET endedAt = :endedAt, dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
     abstract suspend fun finish(uuid: String, endedAt: Long)
 
     // Only one workout is in progress at a time; starting a new one closes any left open.
-    @Query("UPDATE sessions SET endedAt = :endedAt, dirty = 1 WHERE endedAt IS NULL AND deleted = 0")
+    @Query("UPDATE sessions SET endedAt = :endedAt, dirty = 1, revision = revision + 1 WHERE endedAt IS NULL AND deleted = 0")
     abstract suspend fun finishOpen(endedAt: Long)
 
-    @Query("UPDATE sessions SET deleted = 1, dirty = 1 WHERE uuid = :uuid")
+    @Query("UPDATE sessions SET deleted = 1, dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
     abstract suspend fun softDelete(uuid: String)
 
-    @Query("UPDATE sessions SET notes = :notes, dirty = 1 WHERE uuid = :uuid")
+    @Query("UPDATE sessions SET notes = :notes, dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
     abstract suspend fun setNotes(uuid: String, notes: String)
 
-    @Query("UPDATE sessions SET dirty = 1 WHERE uuid = :uuid")
+    @Query("UPDATE sessions SET dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
     protected abstract suspend fun markDirty(uuid: String)
 
     @Query("SELECT * FROM sets WHERE sessionUuid = :sessionUuid AND exercisePosition = :position ORDER BY setNumber")

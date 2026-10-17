@@ -46,3 +46,4 @@ IDs are listed here so code and Claude can use stable field IDs instead of names
 
 - Routine **Strength Day One** (`recm7y5R0Ut20xArF`), active, with 7 Exercises, positions 1–7.
 - It was created from `docs/example-training-program.html`.
+- Routine **Strength Day Two** (`recmHqls0LvkzMFTx`), active, with 6 Exercises: upper body + core. It matches the "next session Friday" note on that sheet.

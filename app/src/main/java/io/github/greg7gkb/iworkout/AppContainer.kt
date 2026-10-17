@@ -36,6 +36,6 @@ class AppContainer(context: Context) {
         .create(AirtableApi::class.java)
 
     val plan = PlanRepository(db.planDao(), airtable)
-    val log = LogRepository(db.logDao())
+    val log = LogRepository(db.logDao(), airtable)
     val syncStatus = SyncStatus(context)
 }

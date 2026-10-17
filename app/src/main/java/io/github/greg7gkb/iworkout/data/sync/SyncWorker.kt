@@ -14,7 +14,7 @@ import androidx.work.WorkerParameters
 import io.github.greg7gkb.iworkout.IWorkoutApp
 import java.util.concurrent.TimeUnit
 
-// Push dirty Sessions (M3), then pull the plan.
+// Push finished Sessions, then pull the plan.
 class SyncWorker(
     context: Context,
     params: WorkerParameters,
@@ -22,6 +22,7 @@ class SyncWorker(
     override suspend fun doWork(): Result {
         val container = (applicationContext as IWorkoutApp).container
         return try {
+            container.log.push()
             container.plan.pull()
             container.syncStatus.markSynced()
             Result.success()
@@ -42,7 +43,7 @@ class SyncWorker(
         fun syncNow(context: Context) {
             WorkManager.getInstance(context).enqueueUniqueWork(
                 NOW,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.APPEND_OR_REPLACE, // a request made mid-sync (e.g. on Finish) runs after it
                 OneTimeWorkRequestBuilder<SyncWorker>().setConstraints(online).build(),
             )
         }

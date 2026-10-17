@@ -40,6 +40,7 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: 
     val routines by remember { container.plan.activeRoutines() }.collectAsStateWithLifecycle(initialValue = null)
     val active by remember { container.log.activeSession() }.collectAsStateWithLifecycle(initialValue = null)
     val sync by container.syncStatus.state.collectAsStateWithLifecycle()
+    val pending by remember { container.log.pendingCount() }.collectAsStateWithLifecycle(initialValue = 0)
 
     Scaffold(
         topBar = {
@@ -50,7 +51,7 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: 
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            SyncLine(sync)
+            SyncLine(sync, pending)
             active?.let { session ->
                 val name = routines?.firstOrNull { it.id == session.routineId }?.name ?: "workout"
                 Card(
@@ -79,12 +80,13 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: 
 }
 
 @Composable
-private fun SyncLine(sync: SyncState) {
-    val text = when {
+private fun SyncLine(sync: SyncState, pending: Int) {
+    val status = when {
         sync.lastError != null -> "Sync failed: ${sync.lastError}"
         sync.lastSyncedAt != null -> "Synced " + DateUtils.getRelativeTimeSpanString(sync.lastSyncedAt)
         else -> "Not synced yet"
     }
+    val text = if (pending > 0) "$status · $pending workout${if (pending == 1) "" else "s"} waiting to upload" else status
     Text(
         text,
         modifier = Modifier.padding(horizontal = 16.dp),

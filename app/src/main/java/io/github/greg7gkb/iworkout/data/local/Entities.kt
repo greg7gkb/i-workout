@@ -1,5 +1,6 @@
 package io.github.greg7gkb.iworkout.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -57,6 +58,8 @@ data class SessionEntity(
     val deleted: Boolean = false,
     // True when local changes haven't been pushed yet.
     val dirty: Boolean = true,
+    // Bumped on every change; a push only clears `dirty` if no change happened while it was in flight.
+    @ColumnInfo(defaultValue = "0") val revision: Int = 0,
 )
 
 @Entity(

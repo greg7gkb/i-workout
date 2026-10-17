@@ -1,13 +1,15 @@
 package io.github.greg7gkb.iworkout.data.local
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
     entities = [RoutineEntity::class, ExerciseEntity::class, SessionEntity::class, SetEntity::class],
-    version = 1,
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun planDao(): PlanDao
