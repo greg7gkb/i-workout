@@ -2,9 +2,8 @@
 
 A small, offline-first Android app for logging strength workouts. Routines are written by Claude into Airtable; the app pulls them, lets you log Sessions in the gym with no signal, and syncs the logs back.
 
-- Requirements, vocabulary, and decisions: [docs/FOUNDATION.md](docs/FOUNDATION.md)
+- Requirements, vocabulary and architecture, including the sync diagram: [docs/FOUNDATION.md](docs/FOUNDATION.md)
 - Airtable tables and field IDs: [docs/airtable-schema.md](docs/airtable-schema.md)
-- How data moves on and off the phone (diagram): [docs/data-flow.md](docs/data-flow.md)
 
 <table>
   <tr>

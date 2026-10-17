@@ -7,7 +7,7 @@ import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.put
 
-// How a Session's Sets are written to Airtable. This is the contract Claude reads; see docs/FOUNDATION.md §6.
+// How a Session's Sets are written to Airtable. This is the contract Claude reads; see docs/FOUNDATION.md, "Data contract".
 
 // Sessions.Sets: one object per Set, in order. Warm-up/cool-down (no reps or weight) carry only `done`.
 internal fun setsJson(sets: List<SetEntity>): JsonArray = buildJsonArray {

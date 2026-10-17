@@ -38,7 +38,7 @@ IDs are listed here so code and Claude can use stable field IDs instead of names
 | Ended | `fld8BeaJxT2Zh8YBK` | date-time |
 | Routine | `fldw6Bds6Ot80t9fA` | link → Routines (zero or one) |
 | Notes | `fldMK4JsAZG0NPBsa` | long text |
-| Sets | `fld50x68oynBecEJK` | long text holding a JSON array (format in FOUNDATION §6) |
+| Sets | `fld50x68oynBecEJK` | long text holding a JSON array (format: FOUNDATION.md, "Data contract") |
 | Deleted | `fldLENVhPJXrh5Wor` | checkbox (soft delete) |
 | App Version | `fldHgon9Df3sqD1AT` | text: the app's `versionName (versionCode)` that last uploaded the row. Tells which Sets format it was written in. |
 | Summary | `fldPiPbgEZCqTo2Om` | long text: a readable copy of Sets, one exercise per line (`Goblet Squat: 10 @ 25, 10 @ 25`, `Warm-up ✓`). Written by the app. Sets stays the source of truth. Experimental; delete it if it isn't useful. |

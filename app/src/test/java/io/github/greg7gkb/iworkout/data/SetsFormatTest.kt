@@ -4,7 +4,7 @@ import io.github.greg7gkb.iworkout.data.local.SetEntity
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-// Pins the Sets JSON and Summary written to Airtable: the contract Claude reads (FOUNDATION §6).
+// Pins the Sets JSON and Summary written to Airtable: the contract Claude reads (FOUNDATION.md, "Data contract").
 class SetsFormatTest {
     private fun set(id: Long, pos: Int, name: String, n: Int, reps: Int?, weight: Double?) =
         SetEntity(id = id, sessionUuid = "s", exercisePosition = pos, exerciseName = name, setNumber = n, reps = reps, weight = weight)

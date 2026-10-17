@@ -1,203 +1,243 @@
 # i-workout: Foundation
 
-Status: **Agreed model, v1.** Update this doc whenever a decision changes.
+The single source of truth for what the app is, the words we use, and how it's built. Update it whenever a decision changes. Airtable table and field IDs live separately in [airtable-schema.md](airtable-schema.md).
 
-## 1. Purpose
+## Purpose and objectives
 
-A small personal Android app for logging strength workouts. Claude writes the routines. The app's only jobs are to show what to do, make logging fast in the gym (including with no signal), and keep a history Claude can read when writing the next routines.
+A small personal Android app for logging strength workouts. Claude writes the routines into Airtable. The app shows what to do, makes logging fast in the gym (including with no signal), and keeps a history Claude reads when writing the next routines.
 
-## 2. Objectives
-
-1. **Fast logging.** Logging a set takes one or two taps, and the screen shows what you did last time.
+1. **Fast logging.** A set takes one or two taps, and the screen shows what you did last time.
 2. **Offline first.** Every feature works with no network. Sync happens later, on its own.
-3. **Claude writes the routines.** Claude creates and revises routines directly in Airtable. The app never needs an update to get a new routine.
-4. **Small and light.** One user, one phone, one Airtable base. As few dependencies as possible, no custom server, and no login system.
-5. **Data you can see.** Everything lives in Airtable, where you and Claude can look at it or fix it by hand.
+3. **Claude writes the routines,** directly in Airtable. A new routine never needs an app update.
+4. **Small and light.** One user, one phone, one Airtable base on the free tier. Minimal dependencies, no server, no login.
+5. **Data you can see.** Everything lives in Airtable, readable by you and by Claude.
 
-## 3. Vocabulary
+## Scope
 
-There are four terms. Two describe **the plan** (written by Claude) and two describe **the log** (written by the phone).
+**In:**
+- **Pick a Routine** from the active ones, newest first.
+- **Log a Session:**
+  - work through the Exercises in order, seeing the target, the instructions and "last time"
+  - log each Set with one tap (pre-filled, editable); add or remove Sets
+  - tick warm-up and cool-down as done
+- **History:** past Sessions with their Sets, plus per-Exercise history.
+- **Edit past Sessions:** fix a Set, add or remove Sets, delete the workout, change its date. Changing the date moves start and end together, which also covers backfilling.
+- **Sync:** automatic when online, plus Sync now. Shows sync status, a pending-upload count and a sync history.
+- **Light/dark theme toggle**, remembered.
 
-### Routine
-A workout template: one visit to the gym. Example: "Strength Day One".
-- **name**
-- **notes**: free text for general information like total duration, default rest, coaching notes and "do this once today" reminders.
-- an **ordered list of Exercises**
+**Out:** programs or phases, schedules, progression rules, rest timers, editing Routines on the phone, charts, cardio, wearables, notifications, multiple users, iOS. Anything plan-level goes in a Routine's notes; Claude handles progression by writing new Routines.
 
-### Exercise
-One item in a Routine, in a fixed position.
-- **name**: e.g. "Goblet Squat", "Warm-up"
-- **type**: one of `warm-up`, `cool-down`, `equipment`, `bodyweight`
-- **instructions**: *brief* focal points, e.g. "Hips back, flat back, hinge not squat"
-- **sets**: target number of sets, e.g. `2`. Blank for warm-up and cool-down.
-- **reps**: target as free text, e.g. `10`, `6 each leg`, `8 each side`
-- **weight**: target as free text, e.g. `20–25 lb`, `light`, `no load`
+## Vocabulary
 
-An Exercise belongs to exactly one Routine. There's no shared exercise catalog: if the same movement appears in two Routines, it appears there twice. "Last time" matches on the exact name, so Claude keeps names consistent.
+There are four terms. Two describe **the plan**, which Claude writes. Two describe **the log**, which the phone writes.
 
-**Warm-up and cool-down are each a single Exercise.** Their sub-items go in `instructions`, and they're logged as one "done" tick. Format: a duration line, then one bulleted item per line (Airtable long text keeps newlines, and the app shows them as written):
+- **Routine:** a workout template for one gym visit, e.g. "Strength Day One". It has a name, free-text notes (duration, rest, coaching cues) and an ordered list of Exercises.
+- **Exercise:** one item in a Routine, at a fixed position. Fields:
+  - **name**
+  - **type:** `warm-up`, `cool-down`, `equipment` or `bodyweight`
+  - **instructions:** brief focal points
+  - **sets:** a number
+  - **reps** and **weight:** free-text targets, e.g. `8–10`, `6 each leg`, `20–25 lb`, `light`
+
+  An Exercise belongs to exactly one Routine. There's no shared catalog, so the same movement in two Routines appears twice.
+- **Session:** one workout actually done. It has a phone-generated UUID, a start (and end) time, the Routine it came from, notes, and its Sets.
+- **Set:** one logged effort for one Exercise in a Session. It has reps and weight (lb) as numbers. Bodyweight Sets have no weight.
+
+**Warm-up and cool-down** are each a single Exercise, logged as one "done" tick. Their sub-items go in `instructions` as a duration line, then one bulleted item per line. Airtable keeps the newlines, and the app shows them as written:
 
 ```
 8 min
 • Leg swings, front-back & side-side: 10/leg
 • Glute bridges: 15
-• Walking lunges: 8/leg
-• Cat-cow + hip circles: 1 min
 ```
-
-### Session
-One workout you actually did, on a date. Example: "Mon Oct 13, Strength Day One".
-- **id**: a UUID generated on the phone
-- **date** (start time; end time optional)
-- **routine**: the Routine it was done from
-- **notes**
-- its **Sets**
-
-### Set
-One logged effort for one Exercise within a Session.
-- **exercise**: which Exercise
-- **reps**: actual count, as a number. Blank for warm-up/cool-down.
-- **weight**: actual weight in lb, as a number. Blank for bodyweight, warm-up and cool-down.
-- **done**: ✓
-
-Warm-up and cool-down produce one Set each, with only `done` filled in.
-
-### Diagram
 
 ```
 ┌──────────────────┐ 1      * ┌──────────────────────┐
 │ ROUTINE          │─────────▶│ EXERCISE             │
-│ name             │ ordered  │ name                 │
-│ notes            │          │ type                 │
+│ name · notes     │ ordered  │ name · type          │
 └────────▲─────────┘          │ instructions         │
-         │                    │ sets · reps · weight │
+         │ done from          │ sets · reps · weight │
          │                    └──────────▲───────────┘
-         │ done from                     │ for
 ┌────────┴─────────┐ 1      * ┌──────────┴───────────┐
 │ SESSION          │─────────▶│ SET                  │
-│ id · date        │          │ reps · weight · done │
+│ uuid · started   │          │ reps · weight · done │
 │ notes            │          └──────────────────────┘
 └──────────────────┘
 ```
 
-The plan is on top and the log is underneath. Logging a Set ties a Session to an Exercise.
+**Worked example:** "Strength Day One", from `docs/example-training-program.html`, is a Routine with 7 Exercises in this order:
+1. Warm-up
+2. Goblet Squat, 2 × 10 @ 20–25 lb
+3. Bulgarian Split Squat, 2 × 6 each leg, no load
+4. Romanian Deadlift, 2 × 8, light
+5. Dumbbell Row, 2 × 10 each side
+6. Dead Bug, 2 × 8 each side
+7. Cool-down
 
-### Out of scope for now
-Programs or phases, schedules ("Monday", "next session Friday"), progression rules, and fatigue/readiness scores. Anything like that goes in the Routine's notes. Claude handles progression by writing new Routines.
+A completed Session from it has 12 Sets: one warm-up tick, two Sets for each of the five main Exercises, and one cool-down tick.
 
-## 4. Worked example: "Strength Day One"
+## Architecture
 
-Source: `docs/example-training-program.html`.
+### Offline first: Room is the single source of truth
+
+Screens read and write only the local Room database. The network exists only inside the sync worker. That's why the app behaves the same with no signal, and why a sync can never leave a screen half-updated.
+
+**The UI is driven by Flows, in one direction:**
 
 ```
-ROUTINE  "Strength Day One"
- notes:  ~40 min · rest 90 s · finish every set with 4–5 reps in reserve ·
-         film one set of RDL + split squat
- │
- ├─ 1  Warm-up                 warm-up     "Leg swings 10/leg · glute bridges 15 ·
- │                                          walking lunges 8/leg · cat-cow + hip circles 1 min"
- ├─ 2  Goblet Squat            equipment   "Weight at chest, sit between knees"     2 × 10         20–25 lb
- ├─ 3  Bulgarian Split Squat   bodyweight  "Back foot up, lower straight down"      2 × 6 each leg no load
- ├─ 4  Romanian Deadlift       equipment   "Hips back, flat back, hinge not squat"  2 × 8          light
- ├─ 5  Dumbbell Row            equipment   "Pull elbow to hip"                      2 × 10 each side
- ├─ 6  Dead Bug                bodyweight  "Low back pressed flat"                  2 × 8 each side
- └─ 7  Cool-down               cool-down   "Couch stretch 60 s/side · figure 4 60 s/side"
+tap → suspend write (Room / prefs) → Flow emits → collectAsStateWithLifecycle → recompose
 ```
 
-A completed Session from this Routine has 12 Sets: 1 warm-up tick, 2 Sets for each of the five main Exercises, and 1 cool-down tick.
+| Data | Source |
+|---|---|
+| Routines, Exercises, Sessions, Sets, "last time", history, pending count | Room DAO `Flow`s, which re-emit when their tables change |
+| Sync status and history, theme | `StateFlow`s backed by SharedPreferences |
+| Sync spinner / "Waiting for network…" | WorkManager job state, as a `Flow` |
 
-### Rules for whoever edits the base (usually Claude)
+- Screens collect Flows inside `remember { … }` so each Flow is created once.
+- Purely local UI state (text being typed, open dialogs, the back stack) lives in `remember` / `rememberSaveable`.
+- **Rule:** any `remember` seeded from Flow data must be keyed on that data. The pre-fill bug came from breaking this: inputs locked in their values before "last time" loaded.
 
-These rules are also written into the Airtable **table and field descriptions**, so an LLM reading the base's schema sees them without this repo. Keep both copies in sync.
-
-- **Exercise names are identity.** "Last time" and per-exercise history match on the exact `Name`, across all Routines. Use identical spelling and casing for the same movement everywhere. Renaming a movement splits its history.
-- **Retire a Routine by unticking Active; don't delete it.** Sessions link to it, and History shows its name.
-- **Sessions are read-only in Airtable.** Only the phone writes them. Edits made in Airtable aren't synced to the phone, and they're overwritten if that workout is edited on the phone again.
-
-## 5. Ownership & sync
+### Ownership: each table has one writer
 
 | Data | Written by | Direction |
 |---|---|---|
-| Routines, Exercises | Claude (Airtable connector), occasionally you by hand | Airtable → phone (Airtable wins) |
-| Sessions, Sets | Phone | phone → Airtable |
+| Routines, Exercises (the plan) | Claude, via the Airtable connector | Airtable → phone; Airtable wins |
+| Sessions, Sets (the log) | the phone | phone → Airtable |
 
-**Each piece of data has exactly one writer, so there are no sync conflicts.**
-- **Logs:** the phone generates the IDs. A retry or an edit updates the same row (an upsert keyed on the UUID). Deletes are soft: a `deleted` flag that syncs like any other change.
-  - Only **finished or discarded** Sessions are pushed. A workout in progress stays on the phone.
-  - A discard of a Session that was **never uploaded** is a local hard delete, so it never reaches Airtable. Once a Session has been uploaded, deleting it is a soft delete that syncs.
-  - Each push also writes a human-readable **Summary** field (see airtable-schema.md). It's an intentional, experimental duplicate of Sets.
-  - Each Session has a local `revision` counter. After a push, the Session is marked clean only if its revision hasn't changed in the meantime, so an edit made during an upload is never lost.
-  - Finish and Discard trigger a sync right away (it runs once the phone is online). The Routines screen shows how many workouts are waiting to upload.
-- **Plans:** each sync re-downloads all Routines and Exercises and replaces the local copy in one transaction. The plan is a few dozen rows, so this costs about one request per table, and it also picks up anything Claude deleted in Airtable (a delta pull would miss deletions).
+With no table having two writers, sync needs no merge logic. These rules follow from it, and **they're also written into the Airtable table and field descriptions**, so an LLM reading the base's schema sees them. Keep both copies in sync.
+- **Exercise names are identity.** "Last time" and history match on the exact name, across Routines. Use identical spelling and casing for the same movement; renaming splits its history.
+- **Retire a Routine by unticking Active; don't delete it.** Sessions link to it, and History shows its name.
+- **Sessions are read-only in Airtable.** Edits made there aren't synced to the phone, and they're overwritten if that workout is edited on the phone again.
 
-## 6. Airtable layout
+### Sync
 
-All tables live in one base, **"i-workout"**, in the **ClaudeSpace** workspace.
+Each sync **pushes, then pulls**:
+- **Push:** every finished or discarded Session with unsent changes is upserted, keyed on its UUID, at most 10 per request. Retries and lost responses can't create duplicates. A workout in progress never leaves the phone.
+- **Pull:** all Routines and Exercises are downloaded, following Airtable's paging, and the local plan is replaced in one transaction. The plan is a few dozen rows, and a full replace also catches deletions that a delta pull would miss. Exercises with no valid Routine are skipped.
 
-| Table | One row per | Key fields |
-|---|---|---|
-| **Routines** | Routine | Name, Notes, Active, Last Modified |
-| **Exercises** | Exercise | Routine (link), Position, Name, Type (single select), Instructions, Sets, Reps, Weight, Last Modified |
-| **Sessions** | Session | UUID, Started, Ended, Routine (link), Notes, Sets (JSON), Deleted, Last Modified |
+**What each Session tracks locally:**
+- `dirty`: has unsent changes.
+- `revision`: bumped on every change. A push clears `dirty` only if `revision` hasn't changed, so an edit made during an upload is never lost.
+- `uploaded`: Airtable has a row for it. Discarding a never-uploaded Session deletes it locally. Discarding an uploaded one is a soft delete (`deleted`) that syncs.
 
-Field IDs are in [airtable-schema.md](airtable-schema.md).
+**When sync runs:** on app launch, every 6 hours, on Sync now, and on Finish, Discard or leaving an edited past workout. It's a WorkManager job that needs the network, so offline requests wait and then run on their own, even after the app is killed or the phone restarts. A failure retries up to 3 times, then waits for the next trigger. A bad token fails visibly but loses nothing: the Sessions stay unsent on the phone.
 
-**Decided: Sets aren't their own table.** They're stored as JSON text in the Session row's `Sets` field. The project must stay on Airtable's **free tier**. A separate Sets table would need about 1,700 rows a year, while JSON needs about 150 Session rows a year. On the phone, Sets are still proper Room rows. The JSON is only how they're stored in Airtable.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Claude<br/>(Airtable connector)
+    participant AT as Airtable
+    participant SW as Phone: SyncWorker<br/>(background, online only)
+    participant DB as Phone: Room DB
+    participant UI as Phone: App UI
 
-Format: one object per logged Set, in order. A skipped Set has no entry. Warm-up and cool-down carry only `done`.
+    rect rgba(100, 150, 250, 0.12)
+    Note over C,AT: PLAN: Claude writes routines
+    C->>AT: Create/update Routines + Exercises
+    end
+
+    rect rgba(100, 200, 120, 0.12)
+    Note over AT,UI: SYNC: launch, every 6h, Sync button, Finish/Discard
+    Note over SW: Waits until the phone is online
+    SW->>DB: pushable(): finished/discarded Sessions that are dirty
+    DB-->>SW: Sessions + their Sets
+    loop Batches of up to 10
+        SW->>AT: PATCH Sessions (upsert on UUID)
+        AT-->>SW: 200 OK
+        SW->>DB: markPushed(uuid, revision)
+    end
+    SW->>AT: GET Routines, GET Exercises (all pages)
+    AT-->>SW: Plan rows
+    SW->>DB: replaceAll(routines, exercises)
+    SW-->>UI: Status line + sync history
+    end
+
+    rect rgba(250, 180, 80, 0.12)
+    Note over DB,UI: LOG: fully offline, UI only talks to Room
+    UI->>DB: Start workout / log set / Finish or Discard
+    DB-->>UI: Exercises, targets, "last time", pending count
+    UI-)SW: syncNow() on Finish/Discard
+    end
+
+    rect rgba(180, 120, 220, 0.12)
+    Note over C,AT: REVIEW: Claude reads your logs
+    C->>AT: Read Sessions (ignore Deleted)
+    Note over C: Writes the next Routines
+    end
+```
+
+### Data contract: the Airtable side
+
+The base has three tables: **Routines**, **Exercises** and **Sessions**. Field IDs are in [airtable-schema.md](airtable-schema.md).
+- **Addressed by ID.** The app uses table and field IDs, not names (`AirtableSchema.kt`), so renaming a column in the Airtable UI doesn't break it.
+- **Sets live as JSON in one cell of the Session row,** not as a table. On the free tier (about 1,000 records per base), a Sets table would need about 1,700 rows a year; JSON needs about 150 Session rows. On the phone, Sets are ordinary Room rows.
+
+**The Sets JSON is an API, and Claude is its client.** One object per logged Set, in order. A skipped Set has no entry. Warm-up and cool-down carry only `done`.
 
 ```json
 [
-  {"pos":1, "exercise":"Warm-up",               "done":true},
-  {"pos":2, "exercise":"Goblet Squat",          "set":1, "reps":10, "weight":25},
-  {"pos":2, "exercise":"Goblet Squat",          "set":2, "reps":8,  "weight":25},
-  {"pos":3, "exercise":"Bulgarian Split Squat", "set":1, "reps":6},
-  {"pos":7, "exercise":"Cool-down",             "done":true}
+  {"pos":1, "exercise":"Warm-up",      "done":true},
+  {"pos":2, "exercise":"Goblet Squat", "set":1, "reps":10, "weight":25},
+  {"pos":3, "exercise":"Dead Bug",     "set":1, "reps":8}
 ]
 ```
 
-- `pos`: the Exercise's position in the Routine.
-- `exercise`: the Exercise's name, used for "last time" matching.
-- `set`: the set number, starting at 1.
-- `reps` / `weight`: numbers. `weight` is in lb and left out for bodyweight.
+- `pos` is the Exercise's position in the Routine.
+- `exercise` is its name.
+- `set` counts from 1.
+- `weight` is in lb and left out for bodyweight.
 
-Trade-off we accepted: in the Airtable UI, the log is one text cell, so it's hard to browse or filter there. You read your history in the app or by asking Claude.
+Alongside the JSON, each uploaded row also carries:
+- **Summary:** a human-readable copy, one exercise per line (`Goblet Squat: 10 @ 25, 10 @ 25`, `Warm-up ✓`). It's derived from Sets, never the other way round. It's an experimental duplicate; delete it if it isn't useful.
+- **App Version:** the `versionName (versionCode)` that wrote the row. **Bump the version whenever the Sets format changes,** so any row's format can be identified.
 
-## 7. Functional requirements (v1)
+`SetsFormatTest` pins the exact output. Change it only deliberately.
 
-1. **Pick a Routine** from the active ones, newest first (by when Claude created it in Airtable).
-2. **Log a Session:**
-   - walk through the Exercises in order
-   - see the targets, the instructions and "last time"
-   - log each Set with one tap (pre-filled from last time or the target, editable)
-   - add or remove Sets
-   - tick warm-up and cool-down as done
-3. **History:** past Sessions and their Sets, plus per-Exercise history (matched by name).
-4. **Edit and delete** your own logs:
-   - fix a Set's numbers, add or remove Sets
-   - delete a workout (soft delete)
-   - change a workout's date. Start and end move together, which also covers backfilling past workouts.
-   - "Last time" always means the latest workout *before* the one you're viewing.
-5. **Sync:** automatic when online, plus a manual "sync now". Shows the last sync time and the number of unsent items.
+### Local schema evolution
 
-**Not in v1:** editing Routines on the phone, charts, cardio, wearables, notifications, multiple users, iOS.
+The phone holds unsent workouts, so a broken database upgrade is the one way data could actually be lost.
+- Room uses automatic migrations, and every version's schema is exported to `app/schemas/`.
+- `MigrationTest` rebuilds a database at every past version from those files, fills it with data, and upgrades it to the current version. Room checks the resulting structure itself.
+- A version bump is covered automatically once its schema is exported.
 
-## 8. Non-functional & technical
+### Time
 
-- **Platform:** Android only, on your own phone, sideloaded. Pounds by default.
-- **Stack:**
-  - Kotlin, Jetpack Compose and Material 3 for the UI
-  - Room as the local single source of truth
-  - WorkManager for sync
-  - Retrofit, OkHttp and kotlinx.serialization for the web calls
-  - one `app` module, with dependencies wired by hand (no DI framework)
-- **Airtable API:**
-  - log upserts use `performUpsert` on `UUID`
-  - at most 10 records per write request
-  - about 5 requests per second
-- **Security:**
-  - The repo is public. The Airtable token lives in `local.properties` (gitignored) and is injected at build time.
-  - The token is scoped to the i-workout base, with record read/write access only.
-- **Repo:**
-  - This directory, pushed to a public GitHub repo under `greg7gkb`.
-  - All project notes and decisions live in the repo (`CLAUDE.md`, `docs/`).
+- Times are stored as UTC epoch milliseconds and shown in the phone's time zone.
+- Changing a workout's date shifts start and end together.
+- "Last time" means the latest non-deleted workout that started **before** the one being viewed, so backdated workouts compare against their own past.
+
+### Dependency wiring
+
+- No DI framework. `AppContainer` builds about seven objects once per process: the database, the Retrofit API, two repositories and two small prefs classes. Classes take their dependencies through their constructors, which is what lets tests pass in an in-memory database and a fake server.
+- There are no ViewModels either: screens collect repository Flows directly, and a rotation just re-subscribes.
+- Revisit both together if screens grow their own logic or the app splits into modules. Hilt is the standard choice then, and Koin a lighter one.
+
+### Quality gates
+
+All must pass before committing (see `CLAUDE.md`):
+- **Strict lint:** every check on, warnings treated as errors, and `NewApi` (calling an API above minSdk) fatal, so release builds fail on it even without running lint.
+- **JVM tests** (`./gradlew :app:testDebugUnitTest`, a few seconds, no emulator):
+  - the data contract
+  - the pre-fill rules
+  - Room queries and sync bookkeeping, under Robolectric (emulating API 35)
+  - database upgrades
+  - push and pull against MockWebServer
+- **Release build:** R8 code and resource shrinking (about 3 MB vs about 34 MB for debug), signed with the debug key for sideloading.
+
+## Platform and stack
+
+- **Platform:** Android, minSdk 29, sideloaded onto your own phone. Weights in pounds.
+- **Stack:** Kotlin, Jetpack Compose with Material 3, Room, WorkManager, Retrofit with OkHttp and kotlinx.serialization. One `app` module.
+- **Airtable API:** at most 10 records per write and about 5 requests per second, both far above what this app uses.
+- **Secrets:** the Airtable token lives in `local.properties` (gitignored) and is compiled into `BuildConfig`. It's scoped to one base, with record read/write access only.
+
+## Known risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| The token is embedded in the APK | Anyone holding the APK can extract it | Never publish the APK; the token is limited to one base. A proxy would be needed if the app is ever shared. |
+| Exercises are matched by name | Renaming a movement splits its history | Naming rule in this doc and in the Airtable descriptions |
+| Session edits made in Airtable aren't pulled | They're overwritten if the phone edits that workout again | Sessions are documented as read-only in Airtable |
+| The token is fixed at build time | Rotating it means a rebuild | Acceptable for one user |
+| Durations of backfilled workouts are meaningless | Ended − Started is only the logging time | Not shown in the app; planning ignores them |
