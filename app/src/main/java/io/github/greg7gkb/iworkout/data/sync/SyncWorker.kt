@@ -15,25 +15,32 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import io.github.greg7gkb.iworkout.BuildConfig
 import io.github.greg7gkb.iworkout.IWorkoutApp
 import java.util.concurrent.TimeUnit
 
-// Push finished Sessions, then pull the plan.
+// Push finished Sessions, restore any Sessions this phone is missing, then pull the plan.
 class SyncWorker(
     context: Context,
     params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
-    override suspend fun doWork(): Result {
+    // One sync at a time per process: the launch-time "sync now" and the first periodic run can start together,
+    // and overlapping runs would race (e.g. both restoring the same Sessions). The second waits, then sees the first's work.
+    override suspend fun doWork(): Result = syncLock.withLock { sync() }
+
+    private suspend fun sync(): Result {
         val container = (applicationContext as IWorkoutApp).container
         val started = System.currentTimeMillis()
         var pushed: Int? = null
         return try {
             pushed = container.log.push()
+            val restored = container.log.restore()
             val (routines, exercises) = container.plan.pull()
-            container.syncStatus.markSynced(pushed, routines, exercises)
+            container.syncStatus.markSynced(pushed, routines, exercises, restored)
             if (BuildConfig.DEBUG) {
-                Log.i(TAG, "Sync ok in ${System.currentTimeMillis() - started} ms: pushed $pushed sessions, pulled $routines routines / $exercises exercises")
+                Log.i(TAG, "Sync ok in ${System.currentTimeMillis() - started} ms: pushed $pushed sessions, restored $restored, pulled $routines routines / $exercises exercises")
             }
             Result.success()
         } catch (e: Exception) {
@@ -45,6 +52,7 @@ class SyncWorker(
 
     companion object {
         private const val TAG = "SyncWorker"
+        private val syncLock = Mutex()
         const val NOW = "sync-now"
         private const val PERIODIC = "sync-periodic"
 

@@ -34,6 +34,24 @@ class SetsFormatTest {
     }
 
     @Test
+    fun parseSetsJson_roundTrips() {
+        val original = listOf(warmUp, squat1, squat2, deadBug)
+        val parsed = parseSetsJson(setsJson(original).toString(), "restored")
+        val comparable = { s: SetEntity -> listOf(s.exercisePosition, s.exerciseName, s.setNumber, s.reps, s.weight) }
+        assertEquals(original.map(comparable), parsed.map(comparable))
+        assertEquals(setOf("restored"), parsed.map { it.sessionUuid }.toSet())
+    }
+
+    @Test
+    fun parseSetsJson_isTolerant() {
+        assertEquals(emptyList<SetEntity>(), parseSetsJson(null, "s"))
+        assertEquals(emptyList<SetEntity>(), parseSetsJson("not json", "s"))
+        // Entries without pos or exercise are skipped; the rest still parse.
+        val parsed = parseSetsJson("""[{"exercise":"No pos"},{"pos":2,"exercise":"Goblet Squat","set":1,"reps":10,"weight":25}]""", "s")
+        assertEquals(listOf("Goblet Squat"), parsed.map { it.exerciseName })
+    }
+
+    @Test
     fun emptySession() {
         assertEquals("[]", setsJson(emptyList()).toString())
         assertEquals("", setsSummary(emptyList()))

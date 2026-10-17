@@ -103,7 +103,7 @@ tap → suspend write (Room / prefs) → Flow emits → collectAsStateWithLifecy
 | Data | Written by | Direction |
 |---|---|---|
 | Routines, Exercises (the plan) | Claude, via the Airtable connector | Airtable → phone; Airtable wins |
-| Sessions, Sets (the log) | the phone | phone → Airtable |
+| Sessions, Sets (the log) | the phone | phone → Airtable; restored back only to installs that lack them |
 
 With no table having two writers, sync needs no merge logic. These rules follow from it, and **they're also written into the Airtable table and field descriptions**, so an LLM reading the base's schema sees them. Keep both copies in sync.
 - **Exercise names are identity.** "Last time" and history match on the exact name, across Routines. Use identical spelling and casing for the same movement; renaming splits its history.
@@ -112,14 +112,17 @@ With no table having two writers, sync needs no merge logic. These rules follow 
 
 ### Sync
 
-Each sync **pushes, then pulls**:
+Each sync **pushes, restores, then pulls**:
 - **Push:** every finished or discarded Session with unsent changes is upserted, keyed on its UUID, at most 10 per request. Retries and lost responses can't create duplicates. A workout in progress never leaves the phone.
+- **Restore:** all Sessions are downloaded, and any the phone doesn't have (matched by UUID) are added with their Sets parsed from the JSON. They're marked already uploaded and clean, so they never re-upload. A Session already on the phone is never overwritten, including one deleted on the phone whose deletion hasn't uploaded yet, so local edits always win. Rows marked Deleted are skipped. This brings history back after a fresh install, a reinstall or a new phone. It's still one writer: the phone only reads back rows that an install of itself wrote.
 - **Pull:** all Routines and Exercises are downloaded, following Airtable's paging, and the local plan is replaced in one transaction. The plan is a few dozen rows, and a full replace also catches deletions that a delta pull would miss. Exercises with no valid Routine are skipped.
 
 **What each Session tracks locally:**
 - `dirty`: has unsent changes.
 - `revision`: bumped on every change. A push clears `dirty` only if `revision` hasn't changed, so an edit made during an upload is never lost.
 - `uploaded`: Airtable has a row for it. Discarding a never-uploaded Session deletes it locally. Discarding an uploaded one is a soft delete (`deleted`) that syncs.
+
+**One sync at a time:** a process-wide lock serializes sync runs. On launch, "sync now" and the first periodic run can start together, and overlapping runs would race.
 
 **When sync runs:** on app launch, every 6 hours, on Sync now, and on Finish, Discard or leaving an edited past workout. It's a WorkManager job that needs the network, so offline requests wait and then run on their own, even after the app is killed or the phone restarts. A failure retries up to 3 times, then waits for the next trigger. A bad token fails visibly but loses nothing: the Sessions stay unsent on the phone.
 
@@ -147,6 +150,9 @@ sequenceDiagram
         AT-->>SW: 200 OK
         SW->>DB: markPushed(uuid, revision)
     end
+    SW->>AT: GET Sessions (all pages)
+    AT-->>SW: Session rows
+    SW->>DB: insertRestored() for any UUID not on the phone
     SW->>AT: GET Routines, GET Exercises (all pages)
     AT-->>SW: Plan rows
     SW->>DB: replaceAll(routines, exercises)
@@ -267,7 +273,7 @@ This updates the app in place and keeps its data. If wireless is flaky, a USB ca
 |---|---|---|
 | The token is embedded in the APK | Anyone holding the APK can extract it | Never publish the APK; the token is limited to one base. A proxy would be needed if the app is ever shared. |
 | Exercises are matched by name | Renaming a movement splits its history | Naming rule in this doc and in the Airtable descriptions |
-| Session edits made in Airtable aren't pulled | They're overwritten if the phone edits that workout again | Sessions are documented as read-only in Airtable |
+| Session edits made in Airtable aren't pulled to a phone that already has the workout | They're overwritten if the phone edits that workout again | Sessions are documented as read-only in Airtable |
 | The token is fixed at build time | Rotating it means a rebuild | Acceptable for one user |
 | Losing the release signing key | No more updates; reinstalling wipes unsynced workouts | Back up `release.jks` and its `local.properties` values |
 | Durations of backfilled workouts are meaningless | Ended − Started is only the logging time | Not shown in the app; planning ignores them |

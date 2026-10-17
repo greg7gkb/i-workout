@@ -2,6 +2,7 @@ package io.github.greg7gkb.iworkout.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -136,6 +137,26 @@ abstract class LogDao {
 
     @Insert
     abstract suspend fun insertSession(session: SessionEntity)
+
+    // Every Session the phone knows about, including soft-deleted ones (a restore must not resurrect them).
+    @Query("SELECT uuid FROM sessions")
+    abstract suspend fun allUuids(): List<String>
+
+    @Insert
+    protected abstract suspend fun insertSets(sets: List<SetEntity>)
+
+    // Returns the new rowId, or -1 if a Session with this uuid already exists.
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    protected abstract suspend fun insertSessionIfAbsent(session: SessionEntity): Long
+
+    // Restore from Airtable: adds a Session and its Sets as already uploaded and clean, so it never re-uploads.
+    // Idempotent: if the Session already exists, nothing changes. Returns whether it was added.
+    @Transaction
+    open suspend fun insertRestored(session: SessionEntity, sets: List<SetEntity>): Boolean {
+        if (insertSessionIfAbsent(session.copy(dirty = false, uploaded = true)) == -1L) return false
+        insertSets(sets)
+        return true
+    }
 
     @Query("UPDATE sessions SET endedAt = :endedAt, dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
     abstract suspend fun finish(uuid: String, endedAt: Long)

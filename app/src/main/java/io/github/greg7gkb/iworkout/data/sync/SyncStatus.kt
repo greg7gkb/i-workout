@@ -17,6 +17,7 @@ data class SyncAttempt(
     val at: Long,
     val ok: Boolean,
     val pushed: Int? = null,
+    val restored: Int? = null,
     val routines: Int? = null,
     val exercises: Int? = null,
     val error: String? = null,
@@ -35,9 +36,9 @@ class SyncStatus(context: Context) {
     val history: StateFlow<List<SyncAttempt>> = _history.asStateFlow()
 
     @Synchronized
-    fun markSynced(pushed: Int, routines: Int, exercises: Int) {
+    fun markSynced(pushed: Int, routines: Int, exercises: Int, restored: Int = 0) {
         val now = System.currentTimeMillis()
-        record(SyncAttempt(now, ok = true, pushed = pushed, routines = routines, exercises = exercises)) {
+        record(SyncAttempt(now, ok = true, pushed = pushed, restored = restored, routines = routines, exercises = exercises)) {
             putLong(KEY_AT, now)
             remove(KEY_ERROR)
         }

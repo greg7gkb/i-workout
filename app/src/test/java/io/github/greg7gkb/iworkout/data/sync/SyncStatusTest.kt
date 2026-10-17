@@ -40,7 +40,11 @@ class SyncStatusTest {
 
     @Test
     fun describeAttempt_text() {
-        assertEquals("Uploaded 1 workout · 2 routines, 13 exercises", describeAttempt(SyncAttempt(0, true, 1, 2, 13)))
+        assertEquals("Uploaded 1 workout · 2 routines, 13 exercises", describeAttempt(SyncAttempt(0, true, pushed = 1, routines = 2, exercises = 13)))
+        assertEquals(
+            "Uploaded 0 workouts · restored 3 · 2 routines, 13 exercises",
+            describeAttempt(SyncAttempt(0, true, pushed = 0, restored = 3, routines = 2, exercises = 13)),
+        )
         assertEquals("Uploaded 0 workouts", describeAttempt(SyncAttempt(0, false, pushed = 0, error = "x")))
         assertNull(describeAttempt(SyncAttempt(0, false, error = "x")))
     }

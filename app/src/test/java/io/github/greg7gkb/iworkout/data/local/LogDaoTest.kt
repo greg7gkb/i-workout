@@ -131,6 +131,21 @@ class LogDaoTest {
     }
 
     @Test
+    fun insertRestored_isIdempotent() = runTest {
+        val restored = SessionEntity("r1", "r", 1_000, 2_000, "")
+        val sets = listOf(SetEntity(sessionUuid = "r1", exercisePosition = 2, exerciseName = "Goblet Squat", setNumber = 1, reps = 10, weight = 20.0))
+
+        assertTrue(dao.insertRestored(restored, sets))
+        assertFalse("second insert is a no-op", dao.insertRestored(restored, sets))
+
+        assertEquals(1, dao.setsFor("r1").first().size)
+        current("r1")!!.let {
+            assertTrue(it.uploaded)
+            assertFalse(it.dirty)
+        }
+    }
+
+    @Test
     fun removeSet_renumbersRemainingSets() = runTest {
         session("s")
         dao.appendSet("s", squat, 10, 20.0)

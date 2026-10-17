@@ -79,9 +79,10 @@ private fun AttemptCard(attempt: SyncAttempt) {
     }
 }
 
-// "Uploaded 1 workout · 2 routines, 13 exercises", or just the upload count if the pull didn't happen.
+// "Uploaded 1 workout · restored 3 · 2 routines, 13 exercises", or just the upload count if the pull didn't happen.
 internal fun describeAttempt(a: SyncAttempt): String? {
     val uploaded = a.pushed?.let { "Uploaded $it workout${if (it == 1) "" else "s"}" }
+    val restored = a.restored?.takeIf { it > 0 }?.let { "restored $it" }
     val pulled = if (a.routines != null && a.exercises != null) "${a.routines} routines, ${a.exercises} exercises" else null
-    return listOfNotNull(uploaded, pulled).joinToString(" · ").ifEmpty { null }
+    return listOfNotNull(uploaded, restored, pulled).joinToString(" · ").ifEmpty { null }
 }

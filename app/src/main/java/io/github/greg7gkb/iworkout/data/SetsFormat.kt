@@ -1,10 +1,14 @@
 package io.github.greg7gkb.iworkout.data
 
 import io.github.greg7gkb.iworkout.data.local.SetEntity
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.put
 
 // How a Session's Sets are written to Airtable. This is the contract Claude reads; see docs/FOUNDATION.md, "Data contract".
@@ -39,3 +43,26 @@ internal fun setsSummary(sets: List<SetEntity>): String =
             }
         }
     }
+
+// Inverse of setsJson(), for restoring Sessions from Airtable onto a fresh install.
+// Tolerant: entries missing `pos` or `exercise` are skipped rather than failing the whole Session.
+internal fun parseSetsJson(json: String?, sessionUuid: String): List<SetEntity> {
+    val array = json?.let { runCatching { Json.parseToJsonElement(it) as? JsonArray }.getOrNull() } ?: return emptyList()
+    return array.mapNotNull { element ->
+        val o = element as? JsonObject ?: return@mapNotNull null
+        val pos = o.int("pos") ?: return@mapNotNull null
+        val name = o.str("exercise") ?: return@mapNotNull null
+        SetEntity(
+            sessionUuid = sessionUuid,
+            exercisePosition = pos,
+            exerciseName = name,
+            setNumber = o.int("set") ?: 1,
+            reps = o.int("reps"),
+            weight = (o["weight"] as? JsonPrimitive)?.doubleOrNull,
+            done = true,
+        )
+    }
+}
+
+private fun JsonObject.int(key: String) = (get(key) as? JsonPrimitive)?.intOrNull
+private fun JsonObject.str(key: String) = (get(key) as? JsonPrimitive)?.takeIf { it.isString }?.content

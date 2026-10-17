@@ -121,6 +121,46 @@ class SyncTest {
     }
 
     @Test
+    fun restore_addsMissingSessionsOnly_neverOverwrites_skipsDeleted() = runTest {
+        db.logDao().insertSession(SessionEntity("local", "r", 1_000, 2_000, "local notes", deleted = false, dirty = false, uploaded = true))
+        server.enqueue(
+            ok(
+                """{"records":[
+                {"id":"x1","fields":{"${Sessions.UUID}":"local","${Sessions.STARTED}":"2026-10-01T00:00:00.000Z","${Sessions.NOTES}":"airtable edit"}},
+                {"id":"x2","fields":{"${Sessions.UUID}":"new","${Sessions.STARTED}":"2026-10-09T22:10:00.000Z",
+                    "${Sessions.ENDED}":"2026-10-09T22:50:00.000Z","${Sessions.ROUTINE}":["r"],
+                    "${Sessions.SETS}":"[{\"pos\":1,\"exercise\":\"Warm-up\",\"done\":true},{\"pos\":2,\"exercise\":\"Goblet Squat\",\"set\":1,\"reps\":10,\"weight\":20}]"}},
+                {"id":"x3","fields":{"${Sessions.UUID}":"gone","${Sessions.STARTED}":"2026-10-05T00:00:00.000Z","${Sessions.DELETED}":true}},
+                {"id":"x4","fields":{"${Sessions.UUID}":"noStart"}}]}""",
+            ),
+        )
+
+        assertEquals("restored count", 1, log.restore())
+
+        val dao = db.logDao()
+        assertEquals("local edits win", "local notes", dao.session("local").first()!!.notes)
+        dao.session("new").first()!!.let {
+            assertEquals("r", it.routineId)
+            assertEquals(java.time.Instant.parse("2026-10-09T22:10:00Z").toEpochMilli(), it.startedAt)
+            assertTrue(it.uploaded)
+            assertTrue(!it.dirty)
+        }
+        assertEquals(listOf("Warm-up" to null, "Goblet Squat" to 20.0), dao.setsFor("new").first().map { it.exerciseName to it.weight })
+        assertEquals(null, dao.session("gone").first())
+        assertTrue("restored sessions never re-upload", dao.pushable().isEmpty())
+    }
+
+    @Test
+    fun restore_doesNotResurrectLocallyDeletedSession() = runTest {
+        // Deleted on the phone, but the deletion hasn't been pushed yet, so Airtable still shows it as live.
+        db.logDao().insertSession(SessionEntity("s", "r", 1_000, 2_000, "", deleted = true, dirty = true, uploaded = true))
+        server.enqueue(ok("""{"records":[{"id":"x","fields":{"${Sessions.UUID}":"s","${Sessions.STARTED}":"2026-10-01T00:00:00.000Z"}}]}"""))
+
+        assertEquals(0, log.restore())
+        assertTrue(db.logDao().session("s").first()!!.deleted)
+    }
+
+    @Test
     fun pull_replacesPlan_followsPaging_skipsOrphans() = runTest {
         db.planDao().replaceAll(listOf(RoutineEntity("stale", "Old routine", "", true)), emptyList())
         server.enqueue(

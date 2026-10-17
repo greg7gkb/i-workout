@@ -10,6 +10,9 @@ import io.github.greg7gkb.iworkout.data.remote.AirtableSchema.Sessions
 import io.github.greg7gkb.iworkout.data.remote.PerformUpsert
 import io.github.greg7gkb.iworkout.data.remote.UpsertRecord
 import io.github.greg7gkb.iworkout.data.remote.UpsertRequest
+import io.github.greg7gkb.iworkout.data.remote.links
+import io.github.greg7gkb.iworkout.data.remote.bool
+import io.github.greg7gkb.iworkout.data.remote.string
 import java.time.Instant
 import java.util.UUID
 import kotlinx.serialization.json.JsonArray
@@ -64,6 +67,35 @@ class LogRepository(
             batch.forEach { dao.markPushed(it.uuid, it.revision) }
         }
         return pending.size
+    }
+
+    // Downloads Sessions from Airtable and adds any this phone doesn't have (fresh install, reinstall, new phone).
+    // Never touches Sessions already on the phone, so local edits always win; rows marked Deleted are skipped.
+    // Returns how many were added.
+    suspend fun restore(): Int {
+        val known = dao.allUuids().toHashSet()
+        var added = 0
+        var offset: String? = null
+        do {
+            val page = api.listRecords(BuildConfig.AIRTABLE_BASE_ID, Sessions.TABLE, offset = offset)
+            for (r in page.records) {
+                val f = r.fields
+                val uuid = f.string(Sessions.UUID) ?: continue
+                if (uuid in known || f.bool(Sessions.DELETED)) continue
+                val startedAt = f.string(Sessions.STARTED)?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: continue
+                val session = SessionEntity(
+                    uuid = uuid,
+                    routineId = f.links(Sessions.ROUTINE).firstOrNull(),
+                    startedAt = startedAt,
+                    endedAt = f.string(Sessions.ENDED)?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: startedAt,
+                    notes = f.string(Sessions.NOTES).orEmpty(),
+                )
+                if (dao.insertRestored(session, parseSetsJson(f.string(Sessions.SETS), uuid))) added++
+                known += uuid
+            }
+            offset = page.offset
+        } while (offset != null)
+        return added
     }
 
     private fun toFields(s: SessionEntity, sets: List<SetEntity>) = buildJsonObject {
