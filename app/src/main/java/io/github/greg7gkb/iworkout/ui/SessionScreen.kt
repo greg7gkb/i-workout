@@ -114,10 +114,10 @@ fun SessionScreen(
         LazyColumn(
             modifier = Modifier.padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             session?.takeIf { finished }?.let { s ->
-                item(key = "date") { DateRow(s.startedAt, s.endedAt, onChange = { pickingDate = true }) }
+                item(key = "date") { DateRow(s.startedAt, onChange = { pickingDate = true }) }
             }
             items(loadedExercises, key = { it.id }) { exercise ->
                 val logged = setsByPosition[exercise.position].orEmpty()
@@ -203,12 +203,12 @@ private fun BookendCard(exercise: ExerciseEntity, done: Boolean, onDone: (Boolea
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
             Checkbox(checked = done, onCheckedChange = onDone)
             Column(Modifier.padding(top = 12.dp)) {
-                Text(exercise.name, style = MaterialTheme.typography.titleMedium)
+                Text(exercise.name, style = MaterialTheme.typography.titleLarge)
                 if (exercise.instructions.isNotBlank()) {
-                    Text(exercise.instructions, style = MaterialTheme.typography.bodyMedium)
+                    Text(exercise.instructions, style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }
@@ -240,36 +240,36 @@ private fun ExerciseLogCard(
     var weight by remember(exercise.id, logged.size) { mutableStateOf(prefillWeight?.let(::formatWeight).orEmpty()) }
 
     Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     exercise.name,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
                 TextButton(onClick = onOpenHistory) { Text("History") }
                 if (targetSets > 0) {
                     Text(
                         "${logged.size}/$targetSets",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         color = if (complete) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            targetLine(exercise)?.let { Text("Target: $it", style = MaterialTheme.typography.bodyMedium) }
+            targetLine(exercise)?.let { Text("Target: $it", style = MaterialTheme.typography.bodyLarge) }
             Text(
                 "Last time: " + (lastTime.takeIf { it.isNotEmpty() }?.joinToString(", ") { describe(it) } ?: "—"),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (exercise.instructions.isNotBlank()) {
-                Text(exercise.instructions, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(exercise.instructions, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             logged.forEach { set ->
                 // Tap a logged set to fix its numbers.
                 Row(Modifier.clickable { onEdit(set) }, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Set ${set.setNumber}", modifier = Modifier.width(56.dp), style = MaterialTheme.typography.bodyLarge)
+                    Text("Set ${set.setNumber}", modifier = Modifier.width(84.dp), style = MaterialTheme.typography.bodyLarge)
                     Text(describe(set), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                     TextButton(onClick = { onRemove(set) }) { Text("Remove") }
                 }
@@ -282,7 +282,7 @@ private fun ExerciseLogCard(
                     label = { Text("Reps") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(88.dp),
+                    modifier = Modifier.width(120.dp),
                 )
                 if (usesWeight) {
                     OutlinedTextField(
@@ -291,7 +291,7 @@ private fun ExerciseLogCard(
                         label = { Text("lb") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.width(96.dp),
+                        modifier = Modifier.width(130.dp),
                     )
                 }
                 Spacer(Modifier.weight(1f))
@@ -338,12 +338,11 @@ private fun leadingInt(s: String?): Int? = s?.let { Regex("""\d+""").find(it)?.v
 private fun leadingNumber(s: String?): Double? = s?.let { Regex("""\d+(\.\d+)?""").find(it)?.value?.toDoubleOrNull() }
 
 @Composable
-private fun DateRow(startedAt: Long, endedAt: Long?, onChange: () -> Unit) {
-    val minutes = endedAt?.let { (it - startedAt) / 60_000 }
+private fun DateRow(startedAt: Long, onChange: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            formatDateTime(startedAt) + (minutes?.let { " · $it min" } ?: ""),
-            style = MaterialTheme.typography.titleMedium,
+            formatDateTime(startedAt),
+            style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.weight(1f),
         )
         TextButton(onClick = onChange) { Text("Change date") }
@@ -371,7 +370,7 @@ private fun EditSetDialog(set: SetEntity, usesWeight: Boolean, onDismiss: () -> 
                     label = { Text("Reps") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(96.dp).focusRequester(focus),
+                    modifier = Modifier.width(130.dp).focusRequester(focus),
                 )
                 if (usesWeight) {
                     OutlinedTextField(
@@ -380,7 +379,7 @@ private fun EditSetDialog(set: SetEntity, usesWeight: Boolean, onDismiss: () -> 
                         label = { Text("lb") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.width(96.dp),
+                        modifier = Modifier.width(130.dp),
                     )
                 }
             }

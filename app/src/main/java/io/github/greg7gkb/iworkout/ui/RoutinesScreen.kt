@@ -62,7 +62,7 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: 
                     modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 ) {
-                    Text("Resume $name →", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
+                    Text("Resume $name →", modifier = Modifier.padding(24.dp), style = MaterialTheme.typography.titleLarge)
                 }
             }
             val list = routines
@@ -73,7 +73,7 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: 
                 }
                 else -> LazyColumn(
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     items(list, key = { it.id }) { RoutineCard(it, onClick = { onOpen(it.id) }) }
                 }
@@ -93,7 +93,7 @@ private fun SyncLine(sync: SyncState, pending: Int) {
     Text(
         text,
         modifier = Modifier.padding(horizontal = 16.dp),
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelLarge,
         color = if (sync.lastError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
@@ -101,12 +101,12 @@ private fun SyncLine(sync: SyncState, pending: Int) {
 @Composable
 private fun RoutineCard(routine: RoutineEntity, onClick: () -> Unit) {
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(24.dp)) {
             Text(routine.name, style = MaterialTheme.typography.titleLarge)
             if (routine.notes.isNotBlank()) {
                 Text(
                     routine.notes,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

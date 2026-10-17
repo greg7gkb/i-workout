@@ -60,11 +60,11 @@ fun RoutineScreen(container: AppContainer, routineId: String, onBack: () -> Unit
         LazyColumn(
             modifier = Modifier.padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             routine?.notes?.takeIf { it.isNotBlank() }?.let { notes ->
                 item {
-                    Text(notes, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(notes, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             items(exercises, key = { it.id }) { ExerciseCard(it) }
@@ -80,20 +80,20 @@ private fun ExerciseCard(exercise: ExerciseEntity) {
         colors = if (bookend) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
         else CardDefaults.cardColors(),
     ) {
-        Row(Modifier.padding(16.dp)) {
+        Row(Modifier.padding(24.dp)) {
             Text(
                 "${exercise.position}",
-                modifier = Modifier.width(28.dp),
-                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.width(40.dp),
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(exercise.name, style = MaterialTheme.typography.titleMedium)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(exercise.name, style = MaterialTheme.typography.titleLarge)
                 targetLine(exercise)?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
                 if (exercise.instructions.isNotBlank()) {
                     Text(
                         exercise.instructions,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

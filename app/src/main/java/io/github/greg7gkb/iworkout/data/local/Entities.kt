@@ -65,10 +65,10 @@ data class SessionEntity(
     @ColumnInfo(defaultValue = "0") val revision: Int = 0,
 )
 
-// History list row: a finished Session plus how many Sets it has.
+// History list row: a finished Session plus how many Exercises it has anything logged for.
 data class SessionSummary(
     @Embedded val session: SessionEntity,
-    val setCount: Int,
+    val exerciseCount: Int,
 )
 
 // Per-exercise history row: a Set plus when its Session started.

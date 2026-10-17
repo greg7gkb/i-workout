@@ -52,24 +52,23 @@ fun HistoryScreen(container: AppContainer, onOpenSession: (String) -> Unit, onBa
         LazyColumn(
             modifier = Modifier.padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(list, key = { it.session.uuid }) { row ->
                 val s = row.session
                 Card(onClick = { onOpenSession(s.uuid) }, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(names[s.routineId] ?: "Workout", style = MaterialTheme.typography.titleMedium)
-                        Text(formatDateTime(s.startedAt), style = MaterialTheme.typography.bodyMedium)
+                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(names[s.routineId] ?: "Workout", style = MaterialTheme.typography.titleLarge)
+                        Text(formatDateTime(s.startedAt), style = MaterialTheme.typography.bodyLarge)
                         Row {
-                            val minutes = s.endedAt?.let { (it - s.startedAt) / 60_000 }
                             Text(
-                                listOfNotNull(minutes?.let { "$it min" }, "${row.setCount} sets").joinToString(" · "),
-                                style = MaterialTheme.typography.bodyMedium,
+                                "${row.exerciseCount} exercise${if (row.exerciseCount == 1) "" else "s"}",
+                                style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f),
                             )
                             if (s.dirty) {
-                                Text("Not uploaded", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+                                Text("Not uploaded", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
                             }
                         }
                     }

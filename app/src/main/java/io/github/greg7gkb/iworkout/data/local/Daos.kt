@@ -61,7 +61,7 @@ abstract class LogDao {
 
     @Query(
         """
-        SELECT sessions.*, (SELECT COUNT(*) FROM sets WHERE sets.sessionUuid = sessions.uuid) AS setCount
+        SELECT sessions.*, (SELECT COUNT(DISTINCT exercisePosition) FROM sets WHERE sets.sessionUuid = sessions.uuid) AS exerciseCount
         FROM sessions WHERE deleted = 0 AND endedAt IS NOT NULL ORDER BY startedAt DESC
         """,
     )

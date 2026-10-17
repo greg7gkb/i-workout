@@ -51,12 +51,12 @@ fun ExerciseHistoryScreen(container: AppContainer, exerciseName: String, onBack:
         LazyColumn(
             modifier = Modifier.padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(bySession, key = { it.first().set.sessionUuid }) { sets ->
                 Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(formatDateTime(sets.first().startedAt), style = MaterialTheme.typography.titleSmall)
+                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(formatDateTime(sets.first().startedAt), style = MaterialTheme.typography.titleMedium)
                         Text(sets.joinToString(", ") { describe(it.set) }, style = MaterialTheme.typography.bodyLarge)
                     }
                 }

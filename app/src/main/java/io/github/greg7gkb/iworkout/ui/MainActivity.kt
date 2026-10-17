@@ -5,16 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.platform.LocalContext
 import io.github.greg7gkb.iworkout.IWorkoutApp
 
 // A tiny back stack of routes ("kind:arg"); a handful of screens doesn't need a navigation library.
@@ -66,10 +60,3 @@ class MainActivity : ComponentActivity() {
 }
 
 private fun List<String>.toMutableStateList(): SnapshotStateList<String> = mutableStateListOf<String>().also { it.addAll(this) }
-
-@Composable
-fun IWorkoutTheme(content: @Composable () -> Unit) {
-    val context = LocalContext.current
-    val colors = if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    MaterialTheme(colorScheme = colors, content = content)
-}
