@@ -6,6 +6,7 @@ Personal offline-first Android workout logger. Claude writes training programs i
 - **Self-contained repo:** all project notes, decisions, and memory live in this repo (this file or `docs/`), never in Claude's external memory directory. Record durable decisions here or in `docs/`.
 - **Public repo** (GitHub user `greg7gkb`): never commit secrets. The Airtable token lives in `local.properties` (gitignored).
 - **Keep it small:** single `app` module, minimal dependencies, no DI framework.
+- **Test before committing:** `./gradlew :app:testDebugUnitTest` must pass. It takes about 5 seconds, runs on the JVM, and needs no emulator. Room runs under Robolectric, sync runs against MockWebServer, and `MigrationTest` upgrades every exported schema version (`app/schemas`) to the current one automatically. When you change the Airtable contract (Sets JSON / Summary), update `SetsFormatTest` deliberately.
 - **Lint before committing:** `./gradlew :app:lintDebug :app:lintRelease` must pass. Lint is strict (all checks, warnings are errors) and catches API-level problems such as calls above minSdk 29.
 
 ## Testing on an emulator

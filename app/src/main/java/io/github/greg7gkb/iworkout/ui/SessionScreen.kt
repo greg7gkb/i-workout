@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -229,12 +228,7 @@ private fun ExerciseLogCard(
     val targetSets = exercise.sets ?: 0
     val complete = targetSets > 0 && logged.size >= targetSets
 
-    // Prefill: previous set this session, else the same set last time, else the target.
-    val nextIndex = logged.size
-    val prev = logged.lastOrNull()
-    val ref = lastTime.getOrNull(nextIndex) ?: lastTime.lastOrNull()
-    val prefillReps = prev?.reps ?: ref?.reps ?: leadingInt(exercise.reps)
-    val prefillWeight = if (usesWeight) prev?.weight ?: ref?.weight ?: leadingNumber(exercise.weight) else null
+    val (prefillReps, prefillWeight) = prefill(exercise, logged, lastTime)
 
     var reps by remember(exercise.id, logged.size) { mutableStateOf(prefillReps?.toString().orEmpty()) }
     var weight by remember(exercise.id, logged.size) { mutableStateOf(prefillWeight?.let(::formatWeight).orEmpty()) }
@@ -275,6 +269,7 @@ private fun ExerciseLogCard(
                 }
             }
 
+            // Inputs share whatever width the button leaves, so the row fits narrow phones at large text sizes.
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = reps,
@@ -282,7 +277,7 @@ private fun ExerciseLogCard(
                     label = { Text("Reps") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(120.dp),
+                    modifier = Modifier.weight(1f),
                 )
                 if (usesWeight) {
                     OutlinedTextField(
@@ -291,12 +286,15 @@ private fun ExerciseLogCard(
                         label = { Text("lb") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.width(130.dp),
+                        modifier = Modifier.weight(1f),
                     )
                 }
-                Spacer(Modifier.weight(1f))
                 val log = { onLog(reps.toIntOrNull(), if (usesWeight) weight.toDoubleOrNull() else null) }
-                if (complete) FilledTonalButton(onClick = log) { Text("+ Set") } else Button(onClick = log) { Text("Log set") }
+                if (complete) {
+                    FilledTonalButton(onClick = log) { Text("+ Set", maxLines = 1, softWrap = false) }
+                } else {
+                    Button(onClick = log) { Text("Log set", maxLines = 1, softWrap = false) }
+                }
             }
         }
     }
@@ -324,18 +322,6 @@ private fun KeepScreenOn() {
     }
 }
 
-internal fun describe(set: SetEntity): String = when {
-    set.reps != null && set.weight != null -> "${set.reps} @ ${formatWeight(set.weight)}"
-    set.reps != null -> "${set.reps}"
-    set.weight != null -> "@ ${formatWeight(set.weight)}"
-    else -> "✓"
-}
-
-internal fun formatWeight(w: Double): String = if (w % 1.0 == 0.0) w.toLong().toString() else w.toString()
-
-private fun leadingInt(s: String?): Int? = s?.let { Regex("""\d+""").find(it)?.value?.toIntOrNull() }
-
-private fun leadingNumber(s: String?): Double? = s?.let { Regex("""\d+(\.\d+)?""").find(it)?.value?.toDoubleOrNull() }
 
 @Composable
 private fun DateRow(startedAt: Long, onChange: () -> Unit) {

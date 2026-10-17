@@ -21,6 +21,15 @@ A small, offline-first Android app for logging strength workouts. Routines are w
 **Release build** (R8-shrunk, about 3 MB instead of about 34 MB, signed with the debug key for sideloading):
 `./gradlew assembleRelease`, then install `app/build/outputs/apk/release/app-release.apk`.
 
+## Tests
+
+`./gradlew :app:testDebugUnitTest`: about 22 JVM tests in about 5 seconds, no emulator needed. They cover:
+- the Airtable data contract (Sets JSON and Summary)
+- the pre-fill rules
+- Room queries and sync bookkeeping (under Robolectric)
+- database upgrades from every past schema version
+- push and pull against a fake Airtable (MockWebServer)
+
 ## Stack
 
 Kotlin · Jetpack Compose · Room · WorkManager · Retrofit + kotlinx.serialization. Single `app` module, no DI framework.
