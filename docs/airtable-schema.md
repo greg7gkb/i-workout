@@ -40,6 +40,7 @@ IDs are listed here so code and Claude can use stable field IDs instead of names
 | Notes | `fldMK4JsAZG0NPBsa` | long text |
 | Sets | `fld50x68oynBecEJK` | long text holding a JSON array (format in FOUNDATION §6) |
 | Deleted | `fldLENVhPJXrh5Wor` | checkbox (soft delete) |
+| Summary | `fldPiPbgEZCqTo2Om` | long text: a readable copy of Sets, one exercise per line (`Goblet Squat: 10 @ 25, 10 @ 25`, `Warm-up ✓`). Written by the app. Sets stays the source of truth. Experimental; delete it if it isn't useful. |
 | Last Modified | `fldliIbVD9ADGeDkn` | last modified time |
 
 ## Seed data

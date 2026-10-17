@@ -10,7 +10,11 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.WorkInfo
 import androidx.work.WorkerParameters
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import io.github.greg7gkb.iworkout.IWorkoutApp
 import java.util.concurrent.TimeUnit
 
@@ -48,6 +52,18 @@ class SyncWorker(
             )
         }
 
+        // RUNNING while any sync is executing; WAITING when "sync now" is queued but blocked (e.g. offline).
+        fun activity(context: Context): Flow<SyncActivity> {
+            val wm = WorkManager.getInstance(context)
+            return combine(wm.getWorkInfosForUniqueWorkFlow(NOW), wm.getWorkInfosForUniqueWorkFlow(PERIODIC)) { now, periodic ->
+                when {
+                    (now + periodic).any { it.state == WorkInfo.State.RUNNING } -> SyncActivity.RUNNING
+                    now.any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.BLOCKED } -> SyncActivity.WAITING
+                    else -> SyncActivity.IDLE
+                }
+            }.distinctUntilChanged()
+        }
+
         fun schedulePeriodic(context: Context) {
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 PERIODIC,
@@ -57,3 +73,5 @@ class SyncWorker(
         }
     }
 }
+
+enum class SyncActivity { IDLE, WAITING, RUNNING }

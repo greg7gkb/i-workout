@@ -37,6 +37,7 @@ object AirtableSchema {
         const val NOTES = "fldMK4JsAZG0NPBsa"
         const val SETS = "fld50x68oynBecEJK"
         const val DELETED = "fldLENVhPJXrh5Wor"
+        const val SUMMARY = "fldPiPbgEZCqTo2Om"
     }
 }
 

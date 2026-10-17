@@ -50,7 +50,7 @@ class LogRepository(
     suspend fun setDone(sessionUuid: String, exercise: ExerciseEntity, done: Boolean) = dao.setDone(sessionUuid, exercise, done)
     suspend fun setNotes(uuid: String, notes: String) = dao.setNotes(uuid, notes)
     suspend fun finish(uuid: String) = dao.finish(uuid, System.currentTimeMillis())
-    suspend fun discard(uuid: String) = dao.softDelete(uuid)
+    suspend fun discard(uuid: String) = dao.discard(uuid)
 
     // Upserts finished/discarded Sessions keyed on UUID, so retries never duplicate rows.
     suspend fun push() {
@@ -61,7 +61,7 @@ class LogRepository(
                 Sessions.TABLE,
                 UpsertRequest(PerformUpsert(listOf(Sessions.UUID)), records),
             )
-            batch.forEach { dao.markClean(it.uuid, it.revision) }
+            batch.forEach { dao.markPushed(it.uuid, it.revision) }
         }
     }
 
@@ -72,8 +72,20 @@ class LogRepository(
         put(Sessions.ROUTINE, JsonArray(listOfNotNull(s.routineId).map(::JsonPrimitive)))
         put(Sessions.NOTES, s.notes)
         put(Sessions.SETS, setsJson(sets).toString())
+        put(Sessions.SUMMARY, summary(sets))
         put(Sessions.DELETED, s.deleted)
     }
+
+    // Human-readable copy of the Sets for browsing in Airtable, one exercise per line:
+    // "Warm-up ✓", "Goblet Squat: 10 @ 25, 10 @ 25", "Dead Bug: 8, 8". Sets JSON stays the source of truth.
+    private fun summary(sets: List<SetEntity>): String =
+        sets.groupBy { it.exercisePosition }.toSortedMap().values.joinToString("\n") { group ->
+            val name = group.first().exerciseName
+            if (group.all { it.reps == null && it.weight == null }) "$name ✓"
+            else "$name: " + group.joinToString(", ") { s ->
+                listOfNotNull(s.reps?.toString(), s.weight?.let { w -> "@ " + if (w % 1.0 == 0.0) w.toLong() else w }).joinToString(" ")
+            }
+        }
 
     // Format: docs/FOUNDATION.md §6. Warm-up/cool-down (no reps or weight) carry only `done`.
     private fun setsJson(sets: List<SetEntity>) = buildJsonArray {

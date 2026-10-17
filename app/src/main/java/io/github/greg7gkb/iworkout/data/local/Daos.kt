@@ -101,7 +101,38 @@ abstract class LogDao {
     abstract suspend fun setsSnapshot(sessionUuid: String): List<SetEntity>
 
     @Query("UPDATE sessions SET dirty = 0 WHERE uuid = :uuid AND revision = :revision")
-    abstract suspend fun markClean(uuid: String, revision: Int)
+    protected abstract suspend fun markClean(uuid: String, revision: Int)
+
+    @Query("UPDATE sessions SET uploaded = 1 WHERE uuid = :uuid")
+    protected abstract suspend fun markUploaded(uuid: String)
+
+    // After a successful push: Airtable now has the row; clean unless edited mid-push.
+    @Transaction
+    open suspend fun markPushed(uuid: String, revision: Int) {
+        markUploaded(uuid)
+        markClean(uuid, revision)
+    }
+
+    @Query("SELECT * FROM sessions WHERE uuid = :uuid")
+    protected abstract suspend fun sessionNow(uuid: String): SessionEntity?
+
+    @Query("DELETE FROM sets WHERE sessionUuid = :uuid")
+    protected abstract suspend fun deleteSetsForSession(uuid: String)
+
+    @Query("DELETE FROM sessions WHERE uuid = :uuid")
+    protected abstract suspend fun deleteSession(uuid: String)
+
+    // Never uploaded: just remove it locally. Otherwise soft-delete so the deletion syncs.
+    @Transaction
+    open suspend fun discard(uuid: String) {
+        val session = sessionNow(uuid) ?: return
+        if (session.uploaded) {
+            softDelete(uuid)
+        } else {
+            deleteSetsForSession(uuid)
+            deleteSession(uuid)
+        }
+    }
 
     @Insert
     abstract suspend fun insertSession(session: SessionEntity)
@@ -114,7 +145,7 @@ abstract class LogDao {
     abstract suspend fun finishOpen(endedAt: Long)
 
     @Query("UPDATE sessions SET deleted = 1, dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
-    abstract suspend fun softDelete(uuid: String)
+    protected abstract suspend fun softDelete(uuid: String)
 
     @Query("UPDATE sessions SET notes = :notes, dirty = 1, revision = revision + 1 WHERE uuid = :uuid")
     abstract suspend fun setNotes(uuid: String, notes: String)

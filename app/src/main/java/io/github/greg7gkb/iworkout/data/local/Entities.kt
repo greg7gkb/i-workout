@@ -63,6 +63,8 @@ data class SessionEntity(
     val dirty: Boolean = true,
     // Bumped on every change; a push only clears `dirty` if no change happened while it was in flight.
     @ColumnInfo(defaultValue = "0") val revision: Int = 0,
+    // True once Airtable has a row for this Session; a discard before that is a local hard delete.
+    @ColumnInfo(defaultValue = "0") val uploaded: Boolean = false,
 )
 
 // History list row: a finished Session plus how many Exercises it has anything logged for.

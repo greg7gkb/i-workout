@@ -6,6 +6,7 @@ import io.github.greg7gkb.iworkout.data.PlanRepository
 import io.github.greg7gkb.iworkout.data.local.AppDatabase
 import io.github.greg7gkb.iworkout.data.remote.AirtableApi
 import io.github.greg7gkb.iworkout.data.sync.SyncStatus
+import io.github.greg7gkb.iworkout.ui.ThemePrefs
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -38,4 +39,5 @@ class AppContainer(context: Context) {
     val plan = PlanRepository(db.planDao(), airtable)
     val log = LogRepository(db.logDao(), airtable)
     val syncStatus = SyncStatus(context)
+    val theme = ThemePrefs(context)
 }

@@ -46,6 +46,20 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    packaging {
+        // Prebuilt in androidx.graphics; AGP can't strip it without an NDK and warns on every build.
+        jniLibs.keepDebugSymbols += "**/libandroidx.graphics.path.so"
+    }
+
+    lint {
+        // Strict: run every check (including optional ones) and fail on any warning.
+        checkAllWarnings = true
+        warningsAsErrors = true
+        abortOnError = true
+        // Calling an API above minSdk is fatal, so it also fails every assembleRelease (lintVital).
+        fatal += "NewApi"
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true

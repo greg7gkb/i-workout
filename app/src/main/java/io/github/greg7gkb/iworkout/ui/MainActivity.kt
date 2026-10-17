@@ -1,6 +1,12 @@
 package io.github.greg7gkb.iworkout.ui
 
+import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -20,10 +26,17 @@ private const val HISTORY = "history"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         val container = (application as IWorkoutApp).container
         setContent {
-            IWorkoutTheme {
+            val chosen by container.theme.dark.collectAsStateWithLifecycle()
+            val dark = chosen ?: isSystemInDarkTheme()
+            // Status/nav bar icons must follow the app's theme, not the system's.
+            DisposableEffect(dark) {
+                val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                onDispose {}
+            }
+            IWorkoutTheme(dark) {
                 val stack = rememberSaveable(saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() })) {
                     mutableStateListOf<String>()
                 }
@@ -37,6 +50,8 @@ class MainActivity : ComponentActivity() {
                         onOpen = { stack += ROUTINE + it },
                         onResume = { stack += SESSION + it },
                         onHistory = { stack += HISTORY },
+                        dark = dark,
+                        onToggleTheme = { container.theme.setDark(!dark) },
                     )
                     route.startsWith(ROUTINE) -> RoutineScreen(
                         container,
@@ -59,4 +74,4 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private fun List<String>.toMutableStateList(): SnapshotStateList<String> = mutableStateListOf<String>().also { it.addAll(this) }
+internal fun List<String>.toMutableStateList(): SnapshotStateList<String> = mutableStateListOf<String>().also { it.addAll(this) }

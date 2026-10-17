@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -30,17 +32,26 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.greg7gkb.iworkout.AppContainer
 import io.github.greg7gkb.iworkout.data.local.RoutineEntity
+import io.github.greg7gkb.iworkout.data.sync.SyncActivity
 import io.github.greg7gkb.iworkout.data.sync.SyncState
 import io.github.greg7gkb.iworkout.data.sync.SyncWorker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: (String) -> Unit, onHistory: () -> Unit) {
+fun RoutinesScreen(
+    container: AppContainer,
+    onOpen: (String) -> Unit,
+    onResume: (String) -> Unit,
+    onHistory: () -> Unit,
+    dark: Boolean,
+    onToggleTheme: () -> Unit,
+) {
     val context = LocalContext.current
     val routines by remember { container.plan.activeRoutines() }.collectAsStateWithLifecycle(initialValue = null)
     val active by remember { container.log.activeSession() }.collectAsStateWithLifecycle(initialValue = null)
     val sync by container.syncStatus.state.collectAsStateWithLifecycle()
     val pending by remember { container.log.pendingCount() }.collectAsStateWithLifecycle(initialValue = 0)
+    val activity by remember { SyncWorker.activity(context) }.collectAsStateWithLifecycle(initialValue = SyncActivity.IDLE)
 
     Scaffold(
         topBar = {
@@ -48,13 +59,22 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: 
                 title = { Text("Routines") },
                 actions = {
                     TextButton(onClick = onHistory) { Text("History") }
-                    TextButton(onClick = { SyncWorker.syncNow(context) }) { Text("Sync") }
+                    // Shows the theme you'd switch to.
+                    TextButton(onClick = onToggleTheme) { Text(if (dark) "☀" else "☾") }
+                    // A spinner replaces Sync while a sync runs, which also blocks repeat taps.
+                    if (activity == SyncActivity.RUNNING) {
+                        Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
+                        }
+                    } else {
+                        TextButton(onClick = { SyncWorker.syncNow(context) }) { Text("Sync") }
+                    }
                 },
             )
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            SyncLine(sync, pending)
+            SyncLine(sync, pending, activity)
             active?.let { session ->
                 val name = routines?.firstOrNull { it.id == session.routineId }?.name ?: "workout"
                 Card(
@@ -83,8 +103,10 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: 
 }
 
 @Composable
-private fun SyncLine(sync: SyncState, pending: Int) {
+private fun SyncLine(sync: SyncState, pending: Int, activity: SyncActivity) {
     val status = when {
+        activity == SyncActivity.RUNNING -> "Syncing…"
+        activity == SyncActivity.WAITING -> "Waiting for network…"
         sync.lastError != null -> "Sync failed: ${sync.lastError}"
         sync.lastSyncedAt != null -> "Synced " + DateUtils.getRelativeTimeSpanString(sync.lastSyncedAt)
         else -> "Not synced yet"

@@ -108,6 +108,8 @@ A completed Session from this Routine has 12 Sets: 1 warm-up tick, 2 Sets for ea
 **Each piece of data has exactly one writer, so there are no sync conflicts.**
 - **Logs:** the phone generates the IDs. A retry or an edit updates the same row (an upsert keyed on the UUID). Deletes are soft: a `deleted` flag that syncs like any other change.
   - Only **finished or discarded** Sessions are pushed. A workout in progress stays on the phone.
+  - A discard of a Session that was **never uploaded** is a local hard delete, so it never reaches Airtable. Once a Session has been uploaded, deleting it is a soft delete that syncs.
+  - Each push also writes a human-readable **Summary** field (see airtable-schema.md). It's an intentional, experimental duplicate of Sets.
   - Each Session has a local `revision` counter. After a push, the Session is marked clean only if its revision hasn't changed in the meantime, so an edit made during an upload is never lost.
   - Finish and Discard trigger a sync right away (it runs once the phone is online). The Routines screen shows how many workouts are waiting to upload.
 - **Plans:** each sync re-downloads all Routines and Exercises and replaces the local copy in one transaction. The plan is a few dozen rows, so this costs about one request per table, and it also picks up anything Claude deleted in Airtable (a delta pull would miss deletions).
