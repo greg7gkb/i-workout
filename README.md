@@ -4,6 +4,7 @@ A small, offline-first Android app for logging strength workouts. Routines are w
 
 - Requirements, vocabulary, and decisions: [docs/FOUNDATION.md](docs/FOUNDATION.md)
 - Airtable tables and field IDs: [docs/airtable-schema.md](docs/airtable-schema.md)
+- How data moves on and off the phone (diagram): [docs/data-flow.md](docs/data-flow.md)
 
 ## Setup
 
