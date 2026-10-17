@@ -100,7 +100,7 @@ fun SessionScreen(
         topBar = {
             TopAppBar(
                 title = { Text(routine?.name ?: "Workout") },
-                navigationIcon = { TextButton(onClick = close) { Text("Back") } },
+                navigationIcon = { BackButton(onClick = close) },
                 actions = {
                     if (session != null && !finished) {
                         TextButton(onClick = { scope.launch { log.finish(sessionUuid); SyncWorker.syncNow(context); onClose() } }) { Text("Finish") }

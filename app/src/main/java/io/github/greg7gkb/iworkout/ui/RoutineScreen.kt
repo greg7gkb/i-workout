@@ -17,13 +17,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.greg7gkb.iworkout.AppContainer
@@ -44,7 +44,7 @@ fun RoutineScreen(container: AppContainer, routineId: String, onBack: () -> Unit
         topBar = {
             TopAppBar(
                 title = { Text(routine?.name.orEmpty()) },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
+                navigationIcon = { BackButton(onClick = onBack) },
             )
         },
         bottomBar = {
@@ -75,6 +75,9 @@ fun RoutineScreen(container: AppContainer, routineId: String, onBack: () -> Unit
 @Composable
 private fun ExerciseCard(exercise: ExerciseEntity) {
     val bookend = exercise.type == ExerciseType.WARM_UP || exercise.type == ExerciseType.COOL_DOWN
+    // On the tinted warm-up/cool-down card, use its own content color; the gray/primary accents lack contrast there.
+    val accent = if (bookend) Color.Unspecified else MaterialTheme.colorScheme.primary
+    val muted = if (bookend) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant
     Card(
         Modifier.fillMaxWidth(),
         colors = if (bookend) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
@@ -85,7 +88,7 @@ private fun ExerciseCard(exercise: ExerciseEntity) {
                 "${exercise.position}",
                 modifier = Modifier.width(40.dp),
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = accent,
             )
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(exercise.name, style = MaterialTheme.typography.titleLarge)
@@ -94,7 +97,7 @@ private fun ExerciseCard(exercise: ExerciseEntity) {
                     Text(
                         exercise.instructions,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = muted,
                     )
                 }
             }
