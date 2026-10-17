@@ -230,8 +230,9 @@ private fun ExerciseLogCard(
 
     val (prefillReps, prefillWeight) = prefill(exercise, logged, lastTime)
 
-    var reps by remember(exercise.id, logged.size) { mutableStateOf(prefillReps?.toString().orEmpty()) }
-    var weight by remember(exercise.id, logged.size) { mutableStateOf(prefillWeight?.let(::formatWeight).orEmpty()) }
+    // Keyed on the prefill values too: "last time" loads after the first frame, and the fields must pick it up.
+    var reps by remember(exercise.id, logged.size, prefillReps) { mutableStateOf(prefillReps?.toString().orEmpty()) }
+    var weight by remember(exercise.id, logged.size, prefillWeight) { mutableStateOf(prefillWeight?.let(::formatWeight).orEmpty()) }
 
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

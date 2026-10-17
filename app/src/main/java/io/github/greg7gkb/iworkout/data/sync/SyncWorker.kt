@@ -15,6 +15,7 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import io.github.greg7gkb.iworkout.BuildConfig
 import io.github.greg7gkb.iworkout.IWorkoutApp
 import java.util.concurrent.TimeUnit
 
@@ -25,14 +26,19 @@ class SyncWorker(
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val container = (applicationContext as IWorkoutApp).container
+        val started = System.currentTimeMillis()
+        var pushed: Int? = null
         return try {
-            container.log.push()
-            container.plan.pull()
-            container.syncStatus.markSynced()
+            pushed = container.log.push()
+            val (routines, exercises) = container.plan.pull()
+            container.syncStatus.markSynced(pushed, routines, exercises)
+            if (BuildConfig.DEBUG) {
+                Log.i(TAG, "Sync ok in ${System.currentTimeMillis() - started} ms: pushed $pushed sessions, pulled $routines routines / $exercises exercises")
+            }
             Result.success()
         } catch (e: Exception) {
-            Log.w(TAG, "Sync failed", e)
-            container.syncStatus.markFailed(e.message ?: e.javaClass.simpleName)
+            Log.w(TAG, "Sync failed (attempt ${runAttemptCount + 1}, pushed ${pushed ?: "none"})", e)
+            container.syncStatus.markFailed(e.message ?: e.javaClass.simpleName, pushed)
             if (runAttemptCount < 3) Result.retry() else Result.failure()
         }
     }

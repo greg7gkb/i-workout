@@ -22,6 +22,7 @@ private const val ROUTINE = "routine:"
 private const val SESSION = "session:"
 private const val EXERCISE = "exercise:"
 private const val HISTORY = "history"
+private const val SYNC_HISTORY = "sync-history"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,6 +51,7 @@ class MainActivity : ComponentActivity() {
                         onOpen = { stack += ROUTINE + it },
                         onResume = { stack += SESSION + it },
                         onHistory = { stack += HISTORY },
+                        onSyncHistory = { stack += SYNC_HISTORY },
                         dark = dark,
                         onToggleTheme = { container.theme.setDark(!dark) },
                     )
@@ -68,6 +70,7 @@ class MainActivity : ComponentActivity() {
                     )
                     route.startsWith(EXERCISE) -> ExerciseHistoryScreen(container, route.removePrefix(EXERCISE), onBack = pop)
                     route == HISTORY -> HistoryScreen(container, onOpenSession = { stack += SESSION + it }, onBack = pop)
+                    route == SYNC_HISTORY -> SyncHistoryScreen(container, onBack = pop)
                 }
             }
         }

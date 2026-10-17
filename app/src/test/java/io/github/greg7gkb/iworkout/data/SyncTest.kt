@@ -85,7 +85,7 @@ class SyncTest {
         server.enqueue(ok())
         server.enqueue(ok())
 
-        log.push()
+        assertEquals("uploaded count", 12, log.push())
 
         val first = requestJson()
         assertEquals(Sessions.UUID, first["performUpsert"]!!.jsonObject["fieldsToMergeOn"]!!.jsonArray.single().jsonPrimitive.content)
@@ -98,6 +98,7 @@ class SyncTest {
         assertEquals("""[{"pos":2,"exercise":"Goblet Squat","set":1,"reps":10,"weight":25}]""", s0[Sessions.SETS]!!.jsonPrimitive.content)
         assertEquals("Goblet Squat: 10 @ 25", s0[Sessions.SUMMARY]!!.jsonPrimitive.content)
         assertEquals("r", s0[Sessions.ROUTINE]!!.jsonArray.single().jsonPrimitive.content)
+        assertEquals("${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", s0[Sessions.APP_VERSION]!!.jsonPrimitive.content)
 
         assertTrue("all finished sessions are clean", db.logDao().pushable().isEmpty())
         assertTrue(db.logDao().session("s0").first()!!.uploaded)
@@ -146,7 +147,7 @@ class SyncTest {
             ),
         )
 
-        plan.pull()
+        assertEquals("routines to exercises", 2 to 2, plan.pull())
 
         assertEquals(listOf("Day Two", "Day One"), plan.activeRoutines().first().map { it.name }) // newest first; stale gone
         assertEquals(listOf("Warm-up" to ExerciseType.WARM_UP, "Goblet Squat" to ExerciseType.EQUIPMENT), plan.exercisesFor("r1").first().map { it.name to it.type })

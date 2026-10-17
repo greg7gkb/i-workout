@@ -38,6 +38,7 @@ object AirtableSchema {
         const val SETS = "fld50x68oynBecEJK"
         const val DELETED = "fldLENVhPJXrh5Wor"
         const val SUMMARY = "fldPiPbgEZCqTo2Om"
+        const val APP_VERSION = "fldHgon9Df3sqD1AT"
     }
 }
 

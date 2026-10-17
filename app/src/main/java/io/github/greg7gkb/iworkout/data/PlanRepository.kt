@@ -25,7 +25,8 @@ class PlanRepository(
     fun routine(id: String) = dao.routine(id)
     fun exercisesFor(routineId: String) = dao.exercisesFor(routineId)
 
-    suspend fun pull() {
+    // Returns how many Routines and Exercises the plan now has.
+    suspend fun pull(): Pair<Int, Int> {
         val routines = fetchAll(Routines.TABLE).map { r ->
             RoutineEntity(
                 id = r.id,
@@ -54,6 +55,7 @@ class PlanRepository(
             )
         }
         dao.replaceAll(routines, exercises)
+        return routines.size to exercises.size
     }
 
     private suspend fun fetchAll(table: String): List<Record> {

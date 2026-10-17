@@ -43,6 +43,7 @@ fun RoutinesScreen(
     onOpen: (String) -> Unit,
     onResume: (String) -> Unit,
     onHistory: () -> Unit,
+    onSyncHistory: () -> Unit,
     dark: Boolean,
     onToggleTheme: () -> Unit,
 ) {
@@ -74,7 +75,7 @@ fun RoutinesScreen(
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            SyncLine(sync, pending, activity)
+            SyncLine(sync, pending, activity, onClick = onSyncHistory)
             active?.let { session ->
                 val name = routines?.firstOrNull { it.id == session.routineId }?.name ?: "workout"
                 Card(
@@ -103,7 +104,7 @@ fun RoutinesScreen(
 }
 
 @Composable
-private fun SyncLine(sync: SyncState, pending: Int, activity: SyncActivity) {
+private fun SyncLine(sync: SyncState, pending: Int, activity: SyncActivity, onClick: () -> Unit) {
     val status = when {
         activity == SyncActivity.RUNNING -> "Syncing…"
         activity == SyncActivity.WAITING -> "Waiting for network…"
@@ -114,7 +115,8 @@ private fun SyncLine(sync: SyncState, pending: Int, activity: SyncActivity) {
     val text = if (pending > 0) "$status · $pending workout${if (pending == 1) "" else "s"} waiting to upload" else status
     Text(
         text,
-        modifier = Modifier.padding(horizontal = 16.dp),
+        // Tap for the sync history.
+        modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp),
         style = MaterialTheme.typography.labelLarge,
         color = if (sync.lastError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
     )

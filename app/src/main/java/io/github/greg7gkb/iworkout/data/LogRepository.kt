@@ -51,8 +51,10 @@ class LogRepository(
     suspend fun discard(uuid: String) = dao.discard(uuid)
 
     // Upserts finished/discarded Sessions keyed on UUID, so retries never duplicate rows.
-    suspend fun push() {
-        dao.pushable().chunked(10).forEach { batch -> // Airtable max per write
+    // Returns how many Sessions were uploaded.
+    suspend fun push(): Int {
+        val pending = dao.pushable()
+        pending.chunked(10).forEach { batch -> // Airtable max per write
             val records = batch.map { UpsertRecord(toFields(it, dao.setsSnapshot(it.uuid))) }
             api.upsertRecords(
                 BuildConfig.AIRTABLE_BASE_ID,
@@ -61,6 +63,7 @@ class LogRepository(
             )
             batch.forEach { dao.markPushed(it.uuid, it.revision) }
         }
+        return pending.size
     }
 
     private fun toFields(s: SessionEntity, sets: List<SetEntity>) = buildJsonObject {
@@ -72,5 +75,7 @@ class LogRepository(
         put(Sessions.SETS, setsJson(sets).toString())
         put(Sessions.SUMMARY, setsSummary(sets))
         put(Sessions.DELETED, s.deleted)
+        // Which app (and so which Sets format) wrote this row. Bump versionName when the format changes.
+        put(Sessions.APP_VERSION, "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
     }
 }
