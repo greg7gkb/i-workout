@@ -221,7 +221,7 @@ The phone holds unsent workouts, so a broken database upgrade is the one way dat
 
 ### Quality gates
 
-All must pass before committing (see `CLAUDE.md`):
+All must pass before committing (see `CLAUDE.md`). **CI** (`.github/workflows/ci.yml`) runs the tests and strict lint on every push and PR, with no secrets needed.
 - **Strict lint:** every check on, warnings treated as errors, and `NewApi` (calling an API above minSdk) fatal, so release builds fail on it even without running lint.
 - **JVM tests** (`./gradlew :app:testDebugUnitTest`, a few seconds, no emulator):
   - the data contract
@@ -243,6 +243,17 @@ All must pass before committing (see `CLAUDE.md`):
   - Feedback: a light vibration on Log set; finished exercises dim and show a ✓.
 - **Airtable API:** at most 10 records per write and about 5 requests per second, both far above what this app uses.
 - **Secrets:** the Airtable token lives in `local.properties` (gitignored) and is compiled into `BuildConfig`. It's scoped to one base, with record read/write access only.
+
+## Dependency updates
+
+**Dependabot** (`.github/dependabot.yml`) opens one grouped PR a month for all Gradle dependencies (the version catalog, plugins included, and the Gradle wrapper), and another for the GitHub Actions versions. CI checks each PR.
+
+Monthly routine:
+1. If the PR is green, merge it and pull.
+2. Open the project in Android Studio. If it won't sync because the AGP version is too new for your Studio, update Studio.
+3. Release to your phone (below).
+
+If CI fails, the fix usually involves a new deprecation or lint check from an updated library. Ask Claude to fix the PR.
 
 ## Releasing to your phone
 

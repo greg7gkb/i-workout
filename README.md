@@ -30,7 +30,7 @@ A small, offline-first Android app for logging strength workouts. Routines are w
 
 **Release build:** R8-shrunk (about 3 MB), signed with a dedicated release key configured in `local.properties`. Install it on a paired phone with `./gradlew installRelease`. For the full process (key, pairing, versioning), see "Releasing to your phone" in [docs/FOUNDATION.md](docs/FOUNDATION.md). Never publish the APK: it contains your Airtable token.
 
-## Tests
+## Tests and CI
 
 `./gradlew :app:testDebugUnitTest`: a JVM test suite that runs in seconds, with no emulator needed. It covers:
 - the Airtable data contract (Sets JSON and Summary)
@@ -38,6 +38,8 @@ A small, offline-first Android app for logging strength workouts. Routines are w
 - Room queries and sync bookkeeping (under Robolectric)
 - database upgrades from every past schema version
 - push and pull against a fake Airtable (MockWebServer)
+
+GitHub Actions runs the tests and strict lint on every push and PR. Dependabot opens one grouped dependency-update PR each month.
 
 ## Stack
 
