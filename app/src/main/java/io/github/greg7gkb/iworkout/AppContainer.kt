@@ -1,6 +1,7 @@
 package io.github.greg7gkb.iworkout
 
 import android.content.Context
+import io.github.greg7gkb.iworkout.data.LogRepository
 import io.github.greg7gkb.iworkout.data.PlanRepository
 import io.github.greg7gkb.iworkout.data.local.AppDatabase
 import io.github.greg7gkb.iworkout.data.remote.AirtableApi
@@ -35,5 +36,6 @@ class AppContainer(context: Context) {
         .create(AirtableApi::class.java)
 
     val plan = PlanRepository(db.planDao(), airtable)
+    val log = LogRepository(db.logDao())
     val syncStatus = SyncStatus(context)
 }

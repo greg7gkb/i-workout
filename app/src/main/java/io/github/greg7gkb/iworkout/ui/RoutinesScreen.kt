@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -34,9 +35,10 @@ import io.github.greg7gkb.iworkout.data.sync.SyncWorker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit) {
+fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit, onResume: (String) -> Unit) {
     val context = LocalContext.current
     val routines by remember { container.plan.activeRoutines() }.collectAsStateWithLifecycle(initialValue = null)
+    val active by remember { container.log.activeSession() }.collectAsStateWithLifecycle(initialValue = null)
     val sync by container.syncStatus.state.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -49,6 +51,16 @@ fun RoutinesScreen(container: AppContainer, onOpen: (String) -> Unit) {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             SyncLine(sync)
+            active?.let { session ->
+                val name = routines?.firstOrNull { it.id == session.routineId }?.name ?: "workout"
+                Card(
+                    onClick = { onResume(session.uuid) },
+                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                ) {
+                    Text("Resume $name →", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
+                }
+            }
             val list = routines
             when {
                 list == null -> Unit

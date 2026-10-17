@@ -24,14 +24,26 @@ class MainActivity : ComponentActivity() {
         val container = (application as IWorkoutApp).container
         setContent {
             IWorkoutTheme {
-                // Two screens don't need a navigation library.
+                // Three screens don't need a navigation library.
                 var routineId by rememberSaveable { mutableStateOf<String?>(null) }
-                val selected = routineId
-                if (selected == null) {
-                    RoutinesScreen(container, onOpen = { routineId = it })
-                } else {
-                    BackHandler { routineId = null }
-                    RoutineScreen(container, selected, onBack = { routineId = null })
+                var sessionUuid by rememberSaveable { mutableStateOf<String?>(null) }
+                val openRoutine = routineId
+                val openSession = sessionUuid
+                when {
+                    openSession != null -> {
+                        BackHandler { sessionUuid = null }
+                        SessionScreen(container, openSession, onClose = { sessionUuid = null; routineId = null })
+                    }
+                    openRoutine != null -> {
+                        BackHandler { routineId = null }
+                        RoutineScreen(
+                            container,
+                            openRoutine,
+                            onBack = { routineId = null },
+                            onOpenSession = { sessionUuid = it },
+                        )
+                    }
+                    else -> RoutinesScreen(container, onOpen = { routineId = it }, onResume = { sessionUuid = it })
                 }
             }
         }
