@@ -13,3 +13,7 @@ captures/
 .idea/
 *.iml
 .DS_Store
+
+# Release signing key (credentials in local.properties). Never commit.
+*.jks
+*.keystore

@@ -19,3 +19,4 @@ Personal offline-first Android workout logger. Claude writes training programs i
 - **Keep the user's emulator live:** `emulator-5554` is the user's (used from Android Studio). After finishing and verifying an app change, install and relaunch it there so the user always sees the latest code:
   `ANDROID_SERIAL=emulator-5554 ./gradlew :app:installDebug && adb -s emulator-5554 shell am start -n io.github.greg7gkb.iworkout/.ui.MainActivity`.
   **Only** install and launch. No taps, no network or setting changes, and no test data on that device.
+- **The user's personal phone** (a Pixel 7, paired over wireless ADB) is for release installs only, via `./gradlew installRelease` with `ANDROID_SERIAL` set. **Never take screenshots of it, read its screen, or interact with it.** It's a personal device, and whatever app is in the foreground may be private.

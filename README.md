@@ -28,8 +28,7 @@ A small, offline-first Android app for logging strength workouts. Routines are w
    ```
 5. **Open the project in Android Studio** (or use `./gradlew` with JDK 17+), then run `./gradlew installDebug` with your phone connected.
 
-**Release build** (R8-shrunk, about 3 MB instead of about 34 MB, signed with the debug key for sideloading):
-`./gradlew assembleRelease`, then install `app/build/outputs/apk/release/app-release.apk`.
+**Release build:** R8-shrunk (about 3 MB), signed with a dedicated release key configured in `local.properties`. Install it on a paired phone with `./gradlew installRelease`. For the full process (key, pairing, versioning), see "Releasing to your phone" in [docs/FOUNDATION.md](docs/FOUNDATION.md). Never publish the APK: it contains your Airtable token.
 
 ## Tests
 

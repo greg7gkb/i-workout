@@ -223,7 +223,7 @@ All must pass before committing (see `CLAUDE.md`):
   - Room queries and sync bookkeeping, under Robolectric (emulating API 35)
   - database upgrades
   - push and pull against MockWebServer
-- **Release build:** R8 code and resource shrinking (about 3 MB vs about 34 MB for debug), signed with the debug key for sideloading.
+- **Release build:** R8 code and resource shrinking (about 3 MB vs about 34 MB for debug), signed with a dedicated release key (see "Releasing to your phone").
 
 ## Platform and stack
 
@@ -238,6 +238,29 @@ All must pass before committing (see `CLAUDE.md`):
 - **Airtable API:** at most 10 records per write and about 5 requests per second, both far above what this app uses.
 - **Secrets:** the Airtable token lives in `local.properties` (gitignored) and is compiled into `BuildConfig`. It's scoped to one base, with record read/write access only.
 
+## Releasing to your phone
+
+The app is sideloaded onto one phone over wireless ADB. There's no store, no CI and no APK hosting: the APK contains the Airtable token, so it must never be published, for example to GitHub Releases on this public repo.
+
+**Signing key (one-time; already done for the author):**
+- The release key lives in `release.jks` in the project root. Its path, alias and passwords are in `local.properties`: `release.storeFile`, `release.storePassword`, `release.keyAlias`, `release.keyPassword`. Both files are gitignored.
+- **Back up `release.jks` and those four values.** Android only installs an update signed with the same key, so losing the key means uninstalling the app, which deletes any workouts not yet synced.
+- To create a key on a new setup:
+  `keytool -genkeypair -keystore release.jks -storetype PKCS12 -alias i-workout -keyalg RSA -keysize 4096 -validity 36500`
+- Without a configured key, release builds fall back to the debug key, so a fresh clone still builds.
+
+**Pairing the phone (one-time):**
+1. Phone: Settings → About phone → tap **Build number** 7 times to unlock Developer options.
+2. Phone: Developer options → enable **Wireless debugging**.
+3. Android Studio: **Device Manager → Pair devices using Wi-Fi**, then scan the QR code from the phone.
+
+**Each release:**
+1. Bump `versionCode` and `versionName` in `app/build.gradle.kts`. This is required if the Sets format changed; uploaded rows record the version.
+2. Run the tests and lint (see "Quality gates").
+3. With the phone on the same Wi-Fi and Wireless debugging on, run `./gradlew installRelease`. If the phone isn't the only device connected, pick it with `ANDROID_SERIAL=<serial from adb devices>`.
+
+This updates the app in place and keeps its data. If wireless is flaky, a USB cable and the same command work too. A debug build signed with a different key can't be replaced; uninstall it first, which deletes its local data.
+
 ## Known risks
 
 | Risk | Impact | Mitigation |
@@ -246,4 +269,5 @@ All must pass before committing (see `CLAUDE.md`):
 | Exercises are matched by name | Renaming a movement splits its history | Naming rule in this doc and in the Airtable descriptions |
 | Session edits made in Airtable aren't pulled | They're overwritten if the phone edits that workout again | Sessions are documented as read-only in Airtable |
 | The token is fixed at build time | Rotating it means a rebuild | Acceptable for one user |
+| Losing the release signing key | No more updates; reinstalling wipes unsynced workouts | Back up `release.jks` and its `local.properties` values |
 | Durations of backfilled workouts are meaningless | Ended − Started is only the logging time | Not shown in the app; planning ignores them |

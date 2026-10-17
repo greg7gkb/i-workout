@@ -30,14 +30,28 @@ android {
         buildConfigField("String", "AIRTABLE_BASE_ID", "\"appy16TLEgUqF2KWV\"")
     }
 
+    // Dedicated release key, configured in local.properties (release.storeFile etc.; see README).
+    // Updates must be signed with the same key, so back up the keystore and its passwords.
+    val releaseStore = localProps.getProperty("release.storeFile")?.let { rootProject.file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (releaseStore != null) {
+            create("release") {
+                storeFile = releaseStore
+                storePassword = localProps.getProperty("release.storePassword")
+                keyAlias = localProps.getProperty("release.keyAlias")
+                keyPassword = localProps.getProperty("release.keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             // R8 shrinking for a small APK; debug is untouched.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Sideloaded personal app: sign release with the debug key.
-            signingConfig = signingConfigs.getByName("debug")
+            // Without a configured release key (e.g. a fresh clone), fall back to the debug key so it still builds.
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
