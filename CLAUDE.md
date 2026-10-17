@@ -3,6 +3,7 @@
 Personal offline-first Android workout logger. Claude writes training programs into Airtable; the app logs workouts and syncs.
 
 - **Source of truth for requirements & vocabulary:** `docs/FOUNDATION.md`. Use its entity names exactly (Routine, Exercise, Session, Set).
+- **Airtable carries its own rules:** table and field descriptions in the base hold the editing rules (exercise names are identity; retire Routines via Active; Sessions are read-only). When a rule changes, update both `docs/FOUNDATION.md` and the Airtable descriptions.
 - **Self-contained repo:** all project notes, decisions, and memory live in this repo (this file or `docs/`), never in Claude's external memory directory. Record durable decisions here or in `docs/`.
 - **Public repo** (GitHub user `greg7gkb`): never commit secrets. The Airtable token lives in `local.properties` (gitignored).
 - **Keep it small:** single `app` module, minimal dependencies, no DI framework.

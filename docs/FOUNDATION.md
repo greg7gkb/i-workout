@@ -106,6 +106,14 @@ ROUTINE  "Strength Day One"
 
 A completed Session from this Routine has 12 Sets: 1 warm-up tick, 2 Sets for each of the five main Exercises, and 1 cool-down tick.
 
+### Rules for whoever edits the base (usually Claude)
+
+These rules are also written into the Airtable **table and field descriptions**, so an LLM reading the base's schema sees them without this repo. Keep both copies in sync.
+
+- **Exercise names are identity.** "Last time" and per-exercise history match on the exact `Name`, across all Routines. Use identical spelling and casing for the same movement everywhere. Renaming a movement splits its history.
+- **Retire a Routine by unticking Active; don't delete it.** Sessions link to it, and History shows its name.
+- **Sessions are read-only in Airtable.** Only the phone writes them. Edits made in Airtable aren't synced to the phone, and they're overwritten if that workout is edited on the phone again.
+
 ## 5. Ownership & sync
 
 | Data | Written by | Direction |
