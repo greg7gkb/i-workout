@@ -2,33 +2,36 @@ package io.github.greg7gkb.iworkout.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import io.github.greg7gkb.iworkout.IWorkoutApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val container = (application as IWorkoutApp).container
         setContent {
             IWorkoutTheme {
-                Scaffold { padding ->
-                    Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                        Text("i-workout", style = MaterialTheme.typography.headlineMedium)
-                    }
+                // Two screens don't need a navigation library.
+                var routineId by rememberSaveable { mutableStateOf<String?>(null) }
+                val selected = routineId
+                if (selected == null) {
+                    RoutinesScreen(container, onOpen = { routineId = it })
+                } else {
+                    BackHandler { routineId = null }
+                    RoutineScreen(container, selected, onBack = { routineId = null })
                 }
             }
         }
@@ -40,10 +43,4 @@ fun IWorkoutTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
     val colors = if (isSystemInDarkTheme()) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     MaterialTheme(colorScheme = colors, content = content)
-}
-
-@Preview
-@Composable
-private fun PlaceholderPreview() {
-    IWorkoutTheme { Text("i-workout") }
 }

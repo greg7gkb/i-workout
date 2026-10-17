@@ -1,8 +1,10 @@
 package io.github.greg7gkb.iworkout
 
 import android.content.Context
+import io.github.greg7gkb.iworkout.data.PlanRepository
 import io.github.greg7gkb.iworkout.data.local.AppDatabase
 import io.github.greg7gkb.iworkout.data.remote.AirtableApi
+import io.github.greg7gkb.iworkout.data.sync.SyncStatus
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -25,10 +27,13 @@ class AppContainer(context: Context) {
         }
         .build()
 
-    val airtable: AirtableApi = Retrofit.Builder()
+    private val airtable: AirtableApi = Retrofit.Builder()
         .baseUrl("https://api.airtable.com/")
         .client(http)
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
         .create(AirtableApi::class.java)
+
+    val plan = PlanRepository(db.planDao(), airtable)
+    val syncStatus = SyncStatus(context)
 }

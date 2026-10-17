@@ -1,23 +1,43 @@
 package io.github.greg7gkb.iworkout.data.local
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface PlanDao {
+abstract class PlanDao {
     @Query("SELECT * FROM routines WHERE active = 1 ORDER BY name")
-    fun activeRoutines(): Flow<List<RoutineEntity>>
+    abstract fun activeRoutines(): Flow<List<RoutineEntity>>
+
+    @Query("SELECT * FROM routines WHERE id = :id")
+    abstract fun routine(id: String): Flow<RoutineEntity?>
 
     @Query("SELECT * FROM exercises WHERE routineId = :routineId ORDER BY position")
-    fun exercisesFor(routineId: String): Flow<List<ExerciseEntity>>
+    abstract fun exercisesFor(routineId: String): Flow<List<ExerciseEntity>>
 
-    @Upsert
-    suspend fun upsertRoutines(routines: List<RoutineEntity>)
+    // The plan is small and Airtable-owned, so a pull replaces it wholesale (also picks up deletions).
+    @Transaction
+    open suspend fun replaceAll(routines: List<RoutineEntity>, exercises: List<ExerciseEntity>) {
+        deleteExercises()
+        deleteRoutines()
+        insertRoutines(routines)
+        insertExercises(exercises)
+    }
 
-    @Upsert
-    suspend fun upsertExercises(exercises: List<ExerciseEntity>)
+    @Query("DELETE FROM routines")
+    protected abstract suspend fun deleteRoutines()
+
+    @Query("DELETE FROM exercises")
+    protected abstract suspend fun deleteExercises()
+
+    @Insert
+    protected abstract suspend fun insertRoutines(routines: List<RoutineEntity>)
+
+    @Insert
+    protected abstract suspend fun insertExercises(exercises: List<ExerciseEntity>)
 }
 
 @Dao
