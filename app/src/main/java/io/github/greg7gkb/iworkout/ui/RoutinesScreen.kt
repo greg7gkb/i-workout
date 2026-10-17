@@ -59,8 +59,8 @@ fun RoutinesScreen(
                 title = { Text("Routines") },
                 actions = {
                     TextButton(onClick = onHistory) { Text("History") }
-                    // Shows the theme you'd switch to.
-                    TextButton(onClick = onToggleTheme) { Text(if (dark) "☀" else "☾") }
+                    // Shows the current theme; tap to switch.
+                    TextButton(onClick = onToggleTheme) { Text(if (dark) "☾" else "☀") }
                     // A spinner replaces Sync while a sync runs, which also blocks repeat taps.
                     if (activity == SyncActivity.RUNNING) {
                         Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
