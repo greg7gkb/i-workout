@@ -16,22 +16,25 @@ A small, offline-first Android app for logging strength workouts. Routines are w
 
 ## Setup
 
-1. Open the project in Android Studio (or use `./gradlew` with JDK 17+).
-2. Create an Airtable personal access token at <https://airtable.com/create/tokens>:
+1. **Create an Airtable base** with the three tables described in [docs/airtable-schema.md](docs/airtable-schema.md): Routines, Exercises and Sessions.
+2. **Point the app at your base.** The app addresses Airtable by ID, not by name, so IDs from a new base must be copied in:
+   - the base ID: `AIRTABLE_BASE_ID` in `app/build.gradle.kts`
+   - the table and field IDs: `data/remote/AirtableSchema.kt`
+3. **Create an Airtable personal access token** at <https://airtable.com/create/tokens>:
    - scopes: `data.records:read`, `data.records:write`
-   - access: the **i-workout** base only
-3. Add it to `local.properties` (gitignored; never commit it):
+   - access: your base only
+4. **Add the token to `local.properties`.** Git ignores this file; never commit the token.
    ```
    airtable.token=pat...
    ```
-4. `./gradlew installDebug` with your phone connected.
+5. **Open the project in Android Studio** (or use `./gradlew` with JDK 17+), then run `./gradlew installDebug` with your phone connected.
 
 **Release build** (R8-shrunk, about 3 MB instead of about 34 MB, signed with the debug key for sideloading):
 `./gradlew assembleRelease`, then install `app/build/outputs/apk/release/app-release.apk`.
 
 ## Tests
 
-`./gradlew :app:testDebugUnitTest`: about 25 JVM tests in about 5 seconds, no emulator needed. They cover:
+`./gradlew :app:testDebugUnitTest`: a JVM test suite that runs in seconds, with no emulator needed. It covers:
 - the Airtable data contract (Sets JSON and Summary)
 - the pre-fill rules
 - Room queries and sync bookkeeping (under Robolectric)

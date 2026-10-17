@@ -1,6 +1,6 @@
 # Airtable schema
 
-The base is **i-workout** (`appy16TLEgUqF2KWV`) in the **ClaudeSpace** workspace. It's on the free tier. The model and its rationale are in [FOUNDATION.md](FOUNDATION.md).
+These are the IDs of the author's base, **i-workout** (`appy16TLEgUqF2KWV`). Another base has the same tables and fields with different IDs; see README → Setup. It's on the free tier. The model and its rationale are in [FOUNDATION.md](FOUNDATION.md).
 
 IDs are listed here so code and Claude can use stable field IDs instead of names. They aren't secrets: nothing can be accessed without a personal access token, and the token is never committed.
 
