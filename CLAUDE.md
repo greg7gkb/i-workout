@@ -12,4 +12,7 @@ Personal offline-first Android workout logger. Claude writes training programs i
 
 - Claude uses its **own** headless emulator: AVD `Pixel_7_API_35_-_Google_APIs_No_Google_Play_` on port 5560 (serial `emulator-5560`). Start it with `emulator -avd <AVD> -port 5560 -no-window -no-audio -no-boot-anim -no-snapshot-save`.
 - **Leave it running** between tasks; don't kill it after each test.
-- **Never touch other emulators/devices** (e.g. `emulator-5554` is the user's, used from Android Studio). Always set `ANDROID_SERIAL=emulator-5560` for `adb` and `./gradlew installDebug`.
+- **Never touch other emulators/devices** except as below. Always set `ANDROID_SERIAL=emulator-5560` for `adb` and `./gradlew installDebug` while testing.
+- **Keep the user's emulator live:** `emulator-5554` is the user's (used from Android Studio). After finishing and verifying an app change, install and relaunch it there so the user always sees the latest code:
+  `ANDROID_SERIAL=emulator-5554 ./gradlew :app:installDebug && adb -s emulator-5554 shell am start -n io.github.greg7gkb.iworkout/.ui.MainActivity`.
+  **Only** install and launch. No taps, no network or setting changes, and no test data on that device.
