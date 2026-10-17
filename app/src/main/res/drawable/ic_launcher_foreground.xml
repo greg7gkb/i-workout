@@ -6,11 +6,11 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <!-- Bar -->
-    <path android:fillColor="#C6F432" android:pathData="M38,51.5h32v5h-32z" />
+    <path android:fillColor="#FC7A1E" android:pathData="M38,51.5h32v5h-32z" />
     <!-- Left plates -->
-    <path android:fillColor="#C6F432" android:pathData="M29,38h6a2,2 0,0 1,2 2v28a2,2 0,0 1,-2 2h-6a2,2 0,0 1,-2 -2v-28a2,2 0,0 1,2 -2z" />
-    <path android:fillColor="#C6F432" android:pathData="M23,44h3v20h-3a2,2 0,0 1,-2 -2v-16a2,2 0,0 1,2 -2z" />
+    <path android:fillColor="#FC7A1E" android:pathData="M29,38h6a2,2 0,0 1,2 2v28a2,2 0,0 1,-2 2h-6a2,2 0,0 1,-2 -2v-28a2,2 0,0 1,2 -2z" />
+    <path android:fillColor="#FC7A1E" android:pathData="M23,44h3v20h-3a2,2 0,0 1,-2 -2v-16a2,2 0,0 1,2 -2z" />
     <!-- Right plates -->
-    <path android:fillColor="#C6F432" android:pathData="M73,38h6a2,2 0,0 1,2 2v28a2,2 0,0 1,-2 2h-6a2,2 0,0 1,-2 -2v-28a2,2 0,0 1,2 -2z" />
-    <path android:fillColor="#C6F432" android:pathData="M82,44h3a2,2 0,0 1,2 2v16a2,2 0,0 1,-2 2h-3z" />
+    <path android:fillColor="#FC7A1E" android:pathData="M73,38h6a2,2 0,0 1,2 2v28a2,2 0,0 1,-2 2h-6a2,2 0,0 1,-2 -2v-28a2,2 0,0 1,2 -2z" />
+    <path android:fillColor="#FC7A1E" android:pathData="M82,44h3a2,2 0,0 1,2 2v16a2,2 0,0 1,-2 2h-3z" />
 </vector>
