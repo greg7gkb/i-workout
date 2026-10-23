@@ -199,7 +199,7 @@ fun SessionScreen(
     }
 }
 
-private val ExerciseEntity.isBookend get() = type == ExerciseType.WARM_UP || type == ExerciseType.COOL_DOWN
+internal val ExerciseEntity.isBookend get() = type == ExerciseType.WARM_UP || type == ExerciseType.COOL_DOWN
 
 // `live` is a workout in progress (not a past one being edited); done items dim so the next one stands out.
 @Composable
@@ -243,7 +243,7 @@ private fun ExerciseLogCard(
     ExerciseCard(exercise.type, dimmed = complete && live) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
+                ExerciseTitle(
                     exercise.name,
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),

@@ -80,7 +80,9 @@ private fun ExerciseRow(exercise: ExerciseEntity) {
                 color = exercise.type.accent(),
             )
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(exercise.name, style = MaterialTheme.typography.titleLarge)
+                // Warm-up and cool-down names are generic, so there's nothing useful to look up.
+                if (exercise.isBookend) Text(exercise.name, style = MaterialTheme.typography.titleLarge)
+                else ExerciseTitle(exercise.name, style = MaterialTheme.typography.titleLarge)
                 targetLine(exercise)?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
                 if (exercise.instructions.isNotBlank()) {
                     Text(exercise.instructions, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
