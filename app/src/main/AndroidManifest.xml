@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The hold timer buzzes when it finishes. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".IWorkoutApp"

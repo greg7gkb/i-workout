@@ -174,10 +174,11 @@ fun SessionScreen(
     }
 
     editing?.let { set ->
-        val type = exercises?.firstOrNull { it.position == set.exercisePosition }?.type
+        val exercise = exercises?.firstOrNull { it.position == set.exercisePosition }
         EditSetDialog(
             set = set,
-            usesWeight = type == ExerciseType.EQUIPMENT || set.weight != null,
+            usesWeight = exercise?.type == ExerciseType.EQUIPMENT || set.weight != null,
+            timed = exercise?.isTimed == true,
             onDismiss = { editing = null },
             onSave = { reps, weight ->
                 scope.launch { log.editSet(set, reps, weight) }
@@ -229,6 +230,7 @@ private fun ExerciseLogCard(
     onOpenHistory: () -> Unit,
 ) {
     val usesWeight = exercise.type == ExerciseType.EQUIPMENT
+    val holdSeconds = targetSeconds(exercise.reps)
     val targetSets = exercise.sets ?: 0
     val complete = targetSets > 0 && logged.size >= targetSets
 
@@ -259,7 +261,7 @@ private fun ExerciseLogCard(
             }
             targetLine(exercise)?.let { Text("Target: $it", style = MaterialTheme.typography.bodyLarge) }
             Text(
-                "Last time: " + (lastTime.takeIf { it.isNotEmpty() }?.joinToString(", ") { describe(it) } ?: "—"),
+                "Last time: " + (lastTime.takeIf { it.isNotEmpty() }?.joinToString(", ") { describe(it, timed = holdSeconds != null) } ?: "—"),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -271,17 +273,20 @@ private fun ExerciseLogCard(
                 // Tap a logged set to fix its numbers.
                 Row(Modifier.clickable { onEdit(set) }, verticalAlignment = Alignment.CenterVertically) {
                     Text("Set ${set.setNumber}", modifier = Modifier.width(84.dp), style = MaterialTheme.typography.bodyLarge)
-                    Text(describe(set), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                    Text(describe(set, timed = holdSeconds != null), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                     TextButton(onClick = { onRemove(set) }) { Text("Remove") }
                 }
             }
+
+            // The timer fills in the seconds held; logging the Set is still a tap on Log set.
+            if (holdSeconds != null && live) HoldTimer(holdSeconds) { held -> reps = held.toString() }
 
             // Inputs share whatever width the button leaves, so the row fits narrow phones at large text sizes.
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = reps,
                     onValueChange = { reps = it.filter(Char::isDigit).take(3) },
-                    label = { Text("Reps") },
+                    label = { Text(if (holdSeconds != null) "Seconds" else "Reps") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
@@ -349,7 +354,7 @@ private fun DateRow(startedAt: Long, onChange: () -> Unit) {
 }
 
 @Composable
-private fun EditSetDialog(set: SetEntity, usesWeight: Boolean, onDismiss: () -> Unit, onSave: (Int?, Double?) -> Unit) {
+private fun EditSetDialog(set: SetEntity, usesWeight: Boolean, timed: Boolean, onDismiss: () -> Unit, onSave: (Int?, Double?) -> Unit) {
     // Reps starts focused and fully selected, so typing replaces the old value.
     var reps by remember(set.id) {
         val text = set.reps?.toString().orEmpty()
@@ -366,7 +371,7 @@ private fun EditSetDialog(set: SetEntity, usesWeight: Boolean, onDismiss: () -> 
                 OutlinedTextField(
                     value = reps,
                     onValueChange = { v -> reps = v.copy(text = v.text.filter(Char::isDigit).take(3)) },
-                    label = { Text("Reps") },
+                    label = { Text(if (timed) "Seconds" else "Reps") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.width(130.dp).focusRequester(focus),

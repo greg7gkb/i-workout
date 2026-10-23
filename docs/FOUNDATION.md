@@ -19,13 +19,14 @@ A small personal Android app for logging strength workouts. Claude writes the ro
 - **Log a Session:**
   - work through the Exercises in order, seeing the target, the instructions and "last time"
   - log each Set with one tap (pre-filled, editable); add or remove Sets
+  - time holds (planks and the like) with a countdown that fills in the seconds held
   - tick warm-up and cool-down as done
 - **History:** past Sessions with their Sets, plus per-Exercise history.
 - **Edit past Sessions:** fix a Set, add or remove Sets, delete the workout, change its date. Changing the date moves start and end together, which also covers backfilling.
 - **Sync:** automatic when online, plus Sync now. Shows sync status, a pending-upload count and a sync history.
 - **Light/dark theme toggle**, remembered.
 
-**Out:** programs or phases, schedules, progression rules, rest timers, editing Routines on the phone, charts, cardio, wearables, notifications, multiple users, iOS. Anything plan-level goes in a Routine's notes; Claude handles progression by writing new Routines.
+**Out:** programs or phases, schedules, progression rules, rest timers (between Sets; the hold timer for timed Exercises is in), editing Routines on the phone, charts, cardio, wearables, notifications, multiple users, iOS. Anything plan-level goes in a Routine's notes; Claude handles progression by writing new Routines.
 
 ## Vocabulary
 
@@ -39,9 +40,11 @@ There are four terms. Two describe **the plan**, which Claude writes. Two descri
   - **sets:** a number
   - **reps** and **weight:** free-text targets, e.g. `8–10`, `6 each leg`, `20–25 lb`, `light`
 
+  An Exercise is **timed** when its reps target is a duration: `30 sec`, `45 s each side`, `1 min`. It isn't a separate type, since a hold can use equipment or not. The app detects the unit, shows a countdown timer, and logs the seconds held as the Set's reps.
+
   An Exercise belongs to exactly one Routine. There's no shared catalog, so the same movement in two Routines appears twice.
 - **Session:** one workout actually done. It has a phone-generated UUID, a start (and end) time, the Routine it came from, notes, and its Sets.
-- **Set:** one logged effort for one Exercise in a Session. It has reps and weight (lb) as numbers. Bodyweight Sets have no weight.
+- **Set:** one logged effort for one Exercise in a Session. It has reps and weight (lb) as numbers. Bodyweight Sets have no weight. For a timed Exercise, reps are seconds held.
 
 **Warm-up and cool-down** are each a single Exercise, logged as one "done" tick. Their sub-items go in `instructions` as a duration line, then one bulleted item per line. Airtable keeps the newlines, and the app shows them as written:
 

@@ -59,5 +59,37 @@ class FormatTest {
         assertEquals("8 @ 22.5", describe(set(1, 8, 22.5)))
         assertEquals("8", describe(set(1, 8, null)))
         assertEquals("✓", describe(set(1, null, null)))
+        assertEquals("30 s", describe(set(1, 30, null), timed = true))
+        assertEquals("30 s @ 25", describe(set(1, 30, 25.0), timed = true))
+    }
+
+    @Test
+    fun targetSeconds_durations() {
+        assertEquals(30, targetSeconds("30 sec each side"))
+        assertEquals(45, targetSeconds("45 s"))
+        assertEquals(20, targetSeconds("20s"))
+        assertEquals(40, targetSeconds("40 seconds"))
+        assertEquals(60, targetSeconds("1 min"))
+        assertEquals(120, targetSeconds("2 minutes"))
+        assertEquals(30, targetSeconds("30–45 sec"))
+        assertEquals(30, targetSeconds("30 Sec"))
+    }
+
+    @Test
+    fun targetSeconds_repCountsAreNotTimed() {
+        assertNull(targetSeconds("8–10"))
+        assertNull(targetSeconds("6 each leg"))
+        assertNull(targetSeconds("10 each side"))
+        assertNull(targetSeconds("12 squats"))
+        assertNull(targetSeconds(null))
+        assertEquals(false, squat.isTimed)
+        assertEquals(true, squat.copy(reps = "30 sec each side").isTimed)
+    }
+
+    @Test
+    fun formatClock() {
+        assertEquals("0:30", formatClock(30))
+        assertEquals("1:30", formatClock(90))
+        assertEquals("0:05", formatClock(5))
     }
 }
