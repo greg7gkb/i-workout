@@ -222,7 +222,7 @@ The phone holds unsent workouts, so a broken database upgrade is the one way dat
 ### Quality gates
 
 All must pass before committing (see `CLAUDE.md`). **CI** (`.github/workflows/ci.yml`) runs the tests and strict lint on every push and PR, with no secrets needed.
-- **Strict lint:** every check on, warnings treated as errors, and `NewApi` (calling an API above minSdk) fatal, so release builds fail on it even without running lint.
+- **Strict lint:** every check on, warnings treated as errors, and `NewApi` (calling an API above minSdk) fatal, so release builds fail on it even without running lint. The exceptions are the "newer version available" checks (`NewerVersionAvailable`, `GradleDependency`, `AndroidGradlePluginVersion`): their result depends on the day lint runs, not on the code, and Dependabot covers updates (see "Dependency updates").
 - **JVM tests** (`./gradlew :app:testDebugUnitTest`, a few seconds, no emulator):
   - the data contract
   - the pre-fill rules

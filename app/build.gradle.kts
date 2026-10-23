@@ -72,6 +72,9 @@ android {
         abortOnError = true
         // Calling an API above minSdk is fatal, so it also fails every assembleRelease (lintVital).
         fatal += "NewApi"
+        // "A newer version is available" depends on the day lint runs, not on the code, so it would fail CI
+        // whenever anything upstream releases. Dependabot handles updates instead (docs/FOUNDATION.md).
+        disable += setOf("NewerVersionAvailable", "GradleDependency", "AndroidGradlePluginVersion")
     }
 
     testOptions {
