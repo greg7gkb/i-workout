@@ -1,5 +1,5 @@
 [versions]
-agp = "9.4.1"
+agp = "9.5.0"
 kotlin = "2.4.21"
 ksp = "2.3.12"
 coreKtx = "1.19.1"
@@ -9,8 +9,8 @@ composeBom = "2026.09.00"
 room = "2.8.5"
 work = "2.12.0"
 retrofit = "3.0.0"
-okhttp = "5.5.0"
-serialization = "1.11.0"
+okhttp = "5.5.1"
+serialization = "1.12.0"
 # Test-only
 junit = "4.13.2"
 robolectric = "4.17"
