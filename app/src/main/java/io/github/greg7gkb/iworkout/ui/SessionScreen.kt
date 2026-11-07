@@ -25,6 +25,8 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -115,8 +117,10 @@ fun SessionScreen(
     ) { padding ->
         // Wait for the plan to load; otherwise the list anchors on Notes and opens scrolled to the bottom.
         val loadedExercises = exercises ?: return@Scaffold
+        // Make room for the keyboard ourselves; otherwise the system pans the whole window and
+        // it jumps around as the Notes field grows.
         LazyColumn(
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).consumeWindowInsets(padding).imePadding(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
