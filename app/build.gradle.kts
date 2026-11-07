@@ -23,8 +23,8 @@ android {
         applicationId = "io.github.greg7gkb.iworkout"
         minSdk = 29
         targetSdk = 37
-        versionCode = 3
-        versionName = "0.3"
+        versionCode = 4
+        versionName = "0.4"
 
         buildConfigField("String", "AIRTABLE_TOKEN", "\"${localProps.getProperty("airtable.token", "")}\"")
         buildConfigField("String", "AIRTABLE_BASE_ID", "\"appy16TLEgUqF2KWV\"")
