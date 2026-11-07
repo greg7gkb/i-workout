@@ -20,16 +20,24 @@ class FormatTest {
     }
 
     @Test
-    fun prefill_sameSetFromLastTime() {
+    fun prefill_targetBeatsLastTime() {
         val lastTime = listOf(set(1, 10, 25.0), set(2, 9, 27.5))
-        assertEquals(10 to 25.0, prefill(squat, emptyList(), lastTime))
+        assertEquals(8 to 20.0, prefill(squat, emptyList(), lastTime))
     }
 
     @Test
-    fun prefill_previousSetMissingWeight_fallsBackToLastTimesFinalSet() {
-        // Set 2 has no counterpart last time, so the weight comes from last time's final Set.
+    fun prefill_noNumericTarget_usesSameSetFromLastTime() {
+        val loose = squat.copy(reps = "to failure", weight = "light")
+        val lastTime = listOf(set(1, 10, 25.0), set(2, 9, 27.5))
+        assertEquals(10 to 25.0, prefill(loose, emptyList(), lastTime))
+        // Set 3 has no counterpart last time, so it uses last time's final Set.
+        assertEquals(9 to 27.5, prefill(loose, listOf(set(1, null, null), set(2, null, null)), lastTime))
+    }
+
+    @Test
+    fun prefill_previousSetMissingWeight_fallsBackToTarget() {
         val lastTime = listOf(set(1, 10, 25.0))
-        assertEquals(10 to 25.0, prefill(squat, logged = listOf(set(1, 10, null)), lastTime = lastTime))
+        assertEquals(10 to 20.0, prefill(squat, logged = listOf(set(1, 10, null)), lastTime = lastTime))
     }
 
     @Test

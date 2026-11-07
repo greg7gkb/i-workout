@@ -6,13 +6,13 @@ import io.github.greg7gkb.iworkout.data.local.SetEntity
 
 // Pure display/prefill helpers, kept out of composables so they can be unit tested.
 
-// Values to pre-fill for the next Set: the previous Set this session, else the same Set last time
-// (or last time's final Set), else the target. Weight only for equipment exercises.
+// Values to pre-fill for the next Set: the previous Set this session, else the target, else the
+// same Set last time (or last time's final Set) when the target has no number. Weight only for equipment exercises.
 internal fun prefill(exercise: ExerciseEntity, logged: List<SetEntity>, lastTime: List<SetEntity>): Pair<Int?, Double?> {
     val prev = logged.lastOrNull()
     val ref = lastTime.getOrNull(logged.size) ?: lastTime.lastOrNull()
-    val reps = prev?.reps ?: ref?.reps ?: leadingInt(exercise.reps)
-    val weight = if (exercise.type == ExerciseType.EQUIPMENT) prev?.weight ?: ref?.weight ?: leadingNumber(exercise.weight) else null
+    val reps = prev?.reps ?: leadingInt(exercise.reps) ?: ref?.reps
+    val weight = if (exercise.type == ExerciseType.EQUIPMENT) prev?.weight ?: leadingNumber(exercise.weight) ?: ref?.weight else null
     return reps to weight
 }
 
